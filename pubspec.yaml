@@ -33,6 +33,7 @@ dependencies:
   material_design_icons_flutter: ^5.0.0
   http: ^0.13.4  # For making network calls to the Flask backend
   geolocator: ^9.0.1  # For location coordinates
+  shared_preferences: ^2.0.13
 
 
 
