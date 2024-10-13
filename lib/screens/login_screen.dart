@@ -3,6 +3,8 @@ import 'dart:convert'; // For decoding the response
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http; // Add this for making HTTP requests
 
+import 'office_screen.dart'; // Import OfficeScreen to pass user_id
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
@@ -16,32 +18,52 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text;
     final password = _passwordController.text;
 
-    // Replace with your actual login API URL
-    final response = await http.post(
-      Uri.parse('https://spaklean-app-prod.onrender.com/api/auth/login'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'username': email,
-        'password': password,
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('https://spaklean-app-prod.onrender.com/api/auth/login'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'username': email,
+          'password': password,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      final role = responseData['role'];
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final role = responseData['role'];
+        final userId =
+            responseData['user_id']; // Ensure user_id is fetched properly
 
-      // Navigate based on role
-      if (role == 'Admin') {
-        Navigator.pushReplacementNamed(context, '/admin'); // Admin screen
+        if (userId == null) {
+          throw Exception("User ID is null");
+        }
+
+        // Navigate based on role
+        if (role == 'Admin') {
+          Navigator.pushReplacementNamed(context, '/admin');
+        } else if (role == 'Custodian') {
+          // Pass userId to the OfficeScreen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OfficeScreen(
+                  userId:
+                      userId.toString()), // Ensure userId is passed as a string
+            ),
+          );
+        }
       } else {
-        Navigator.pushReplacementNamed(context, '/office'); // Office screen
+        // Handle login error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Login failed. Please check your credentials.')),
+        );
       }
-    } else {
-      // Handle login error
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login failed. Please check your credentials.')),
+        SnackBar(content: Text('An error occurred: $e')),
       );
     }
   }
