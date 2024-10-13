@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'scoreboard_screen.dart'; // Import the ScoreboardScreen
+
 class OfficeScreen extends StatefulWidget {
   final String userId; // Add userId as a parameter to OfficeScreen
 
@@ -72,6 +74,15 @@ class _OfficeScreenState extends State<OfficeScreen> {
                   itemBuilder: (context, index) {
                     return ListTile(
                       title: Text(_assignedOffices[index]['name']),
+                      onTap: () {
+                        // Navigate to ScoreboardScreen when an office is tapped
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ScoreboardScreen(),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
