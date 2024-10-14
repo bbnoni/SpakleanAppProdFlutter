@@ -13,6 +13,14 @@ class _AdminPageState extends State<AdminPage> {
   final _roomController = TextEditingController();
   List<dynamic> _users = []; // List to store users
   String? _selectedUser; // Currently selected user
+  String? _selectedZone; // Currently selected zone
+  List<String> _zones = [
+    'Low Traffic Areas (Yellow Zone)',
+    'Heavy Traffic Areas (Orange Zone)',
+    'Food Service Areas (Green Zone)',
+    'High Microbial Areas (Red Zone)',
+    'Outdoors & Exteriors (Black Zone)'
+  ]; // Available zones
   bool _isLoading = false; // Loading indicator for API requests
 
   @override
@@ -49,13 +57,18 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
-  // Method to create a new office and assign it to the selected user
-  Future<void> _createOffice() async {
+  // Method to create a new office and room, assigning it to the selected user and zone
+  Future<void> _createOfficeAndRoom() async {
     final officeName = _officeController.text;
+    final roomName = _roomController.text;
     final userId = _selectedUser; // Get the selected user ID
+    final zone = _selectedZone; // Get the selected zone
 
-    if (officeName.isEmpty || userId == null) {
-      _showError('Please enter an office name and select a user.');
+    if (officeName.isEmpty ||
+        roomName.isEmpty ||
+        userId == null ||
+        zone == null) {
+      _showError('Please enter all required fields.');
       return;
     }
 
@@ -66,23 +79,25 @@ class _AdminPageState extends State<AdminPage> {
     try {
       final response = await http.post(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/admin/create_office'),
+            'https://spaklean-app-prod.onrender.com/api/admin/create_office_and_room'),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'name': officeName,
+          'office_name': officeName,
+          'room_name': roomName,
           'user_id': userId, // Pass the selected user ID
+          'zone': zone // Pass the selected zone
         }),
       );
 
       if (response.statusCode == 201) {
-        _showSuccess('Office created and assigned successfully.');
+        _showSuccess('Office and room created and assigned successfully.');
       } else {
-        _showError('Failed to create office');
+        _showError('Failed to create office and room.');
       }
     } catch (e) {
-      _showError('An error occurred while creating the office.');
+      _showError('An error occurred while creating the office and room.');
     } finally {
       setState(() {
         _isLoading = false;
@@ -118,9 +133,14 @@ class _AdminPageState extends State<AdminPage> {
               decoration: InputDecoration(labelText: 'Create New Office'),
             ),
             SizedBox(height: 10),
+            TextField(
+              controller: _roomController,
+              decoration: InputDecoration(labelText: 'Create New Room'),
+            ),
+            SizedBox(height: 10),
             DropdownButton<String>(
               value: _selectedUser,
-              hint: Text('Select a User to Assign Office'),
+              hint: Text('Select a User to Assign Office and Room'),
               isExpanded: true,
               onChanged: (String? newValue) {
                 setState(() {
@@ -135,11 +155,28 @@ class _AdminPageState extends State<AdminPage> {
               }).toList(),
             ),
             SizedBox(height: 10),
+            DropdownButton<String>(
+              value: _selectedZone,
+              hint: Text('Select a Zone'),
+              isExpanded: true,
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedZone = newValue;
+                });
+              },
+              items: _zones.map((zone) {
+                return DropdownMenuItem<String>(
+                  value: zone,
+                  child: Text(zone),
+                );
+              }).toList(),
+            ),
+            SizedBox(height: 10),
             _isLoading
                 ? CircularProgressIndicator()
                 : ElevatedButton(
-                    onPressed: _createOffice,
-                    child: Text('Create Office and Assign to User'),
+                    onPressed: _createOfficeAndRoom,
+                    child: Text('Create Office, Room, and Assign to User'),
                   ),
           ],
         ),

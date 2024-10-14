@@ -1,7 +1,11 @@
-// lib/screens/scoreboard_screen.dart
 import 'package:flutter/material.dart';
 
 class ScoreboardScreen extends StatelessWidget {
+  final String userId; // Added userId parameter
+
+  // Constructor to accept userId
+  ScoreboardScreen({required this.userId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -13,7 +17,12 @@ class ScoreboardScreen extends StatelessWidget {
           ListTile(
             title: Text('Facility Inspection'),
             onTap: () {
-              Navigator.pushNamed(context, '/facilityInspection');
+              // Pass userId when navigating to FacilityInspectionScreen
+              Navigator.pushNamed(
+                context,
+                '/facilityInspection',
+                arguments: {'userId': userId},
+              );
             },
           ),
           ListTile(

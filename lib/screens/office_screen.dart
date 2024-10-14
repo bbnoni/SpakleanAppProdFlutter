@@ -75,11 +75,12 @@ class _OfficeScreenState extends State<OfficeScreen> {
                     return ListTile(
                       title: Text(_assignedOffices[index]['name']),
                       onTap: () {
-                        // Navigate to ScoreboardScreen when an office is tapped
+                        // Navigate to ScoreboardScreen and pass the userId
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ScoreboardScreen(),
+                            builder: (context) =>
+                                ScoreboardScreen(userId: widget.userId),
                           ),
                         );
                       },
