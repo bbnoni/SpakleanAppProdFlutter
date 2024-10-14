@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'checkpoint_screen.dart'; // Import CheckpointScreen
+
 class ZoneDetailScreen extends StatefulWidget {
   final String zone;
   final String userId;
@@ -75,7 +77,19 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                     return ListTile(
                       title: Text(_rooms[index]['name']),
                       subtitle: Text('Zone: ${_rooms[index]['zone']}'),
-                      // Add more details if needed
+                      onTap: () {
+                        // Navigate to CheckpointScreen when a room is tapped
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CheckpointScreen(
+                              roomId: _rooms[index]['id']
+                                  .toString(), // Pass room ID
+                              roomName: _rooms[index]['name'], // Pass room name
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
