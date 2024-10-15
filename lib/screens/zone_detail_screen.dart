@@ -8,9 +8,13 @@ import 'checkpoint_screen.dart'; // Import CheckpointScreen
 class ZoneDetailScreen extends StatefulWidget {
   final String zone;
   final String userId;
+  final String officeId; // Add officeId parameter
 
-  ZoneDetailScreen(
-      {required this.zone, required this.userId}); // Pass both zone and userId
+  const ZoneDetailScreen(
+      {super.key,
+      required this.zone,
+      required this.userId,
+      required this.officeId}); // Pass both zone, userId, and officeId
 
   @override
   _ZoneDetailScreenState createState() => _ZoneDetailScreenState();
@@ -26,7 +30,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     _fetchRooms(); // Fetch rooms when the screen loads
   }
 
-  // Fetch rooms for the specific zone and userId
+  // Fetch rooms for the specific zone, userId, and officeId
   Future<void> _fetchRooms() async {
     setState(() {
       _isLoading = true;
@@ -35,7 +39,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/rooms/${widget.zone}'),
+            'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/offices/${widget.officeId}/rooms/${widget.zone}'),
       );
 
       if (response.statusCode == 200) {
@@ -68,9 +72,9 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
         title: Text(widget.zone), // Display the zone name in the title
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _rooms.isEmpty
-              ? Center(child: Text('No rooms found for this zone'))
+              ? const Center(child: Text('No rooms found for this zone'))
               : ListView.builder(
                   itemCount: _rooms.length,
                   itemBuilder: (context, index) {
@@ -86,6 +90,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                               roomId: _rooms[index]['id']
                                   .toString(), // Pass room ID
                               roomName: _rooms[index]['name'], // Pass room name
+                              userId: widget.userId, // Pass userId
                             ),
                           ),
                         );

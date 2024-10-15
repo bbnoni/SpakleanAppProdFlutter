@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 class RoomsScreen extends StatefulWidget {
   final String zone; // The zone selected from the FacilityInspectionScreen
 
-  RoomsScreen({required this.zone});
+  const RoomsScreen({super.key, required this.zone});
 
   @override
   _RoomsScreenState createState() => _RoomsScreenState();
@@ -39,7 +39,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
     } else {
       // Handle API error
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch rooms')),
+        const SnackBar(content: Text('Failed to fetch rooms')),
       );
       setState(() {
         _isLoading = false;
@@ -54,7 +54,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
         title: Text('${widget.zone} Zone Rooms'),
       ),
       body: _isLoading
-          ? Center(
+          ? const Center(
               child:
                   CircularProgressIndicator()) // Show loading indicator while fetching rooms
           : ListView.builder(

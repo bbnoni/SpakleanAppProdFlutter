@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class AdminPage extends StatefulWidget {
+  const AdminPage({super.key});
+
   @override
   _AdminPageState createState() => _AdminPageState();
 }
@@ -14,7 +16,7 @@ class _AdminPageState extends State<AdminPage> {
   List<dynamic> _users = []; // List to store users
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
-  List<String> _zones = [
+  final List<String> _zones = [
     'Low Traffic Areas (Yellow Zone)',
     'Heavy Traffic Areas (Orange Zone)',
     'Food Service Areas (Green Zone)',
@@ -121,7 +123,7 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Dashboard'),
+        title: const Text('Admin Dashboard'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -130,17 +132,17 @@ class _AdminPageState extends State<AdminPage> {
           children: <Widget>[
             TextField(
               controller: _officeController,
-              decoration: InputDecoration(labelText: 'Create New Office'),
+              decoration: const InputDecoration(labelText: 'Create New Office'),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             TextField(
               controller: _roomController,
-              decoration: InputDecoration(labelText: 'Create New Room'),
+              decoration: const InputDecoration(labelText: 'Create New Room'),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             DropdownButton<String>(
               value: _selectedUser,
-              hint: Text('Select a User to Assign Office and Room'),
+              hint: const Text('Select a User to Assign Office and Room'),
               isExpanded: true,
               onChanged: (String? newValue) {
                 setState(() {
@@ -154,10 +156,10 @@ class _AdminPageState extends State<AdminPage> {
                 );
               }).toList(),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             DropdownButton<String>(
               value: _selectedZone,
-              hint: Text('Select a Zone'),
+              hint: const Text('Select a Zone'),
               isExpanded: true,
               onChanged: (String? newValue) {
                 setState(() {
@@ -171,12 +173,13 @@ class _AdminPageState extends State<AdminPage> {
                 );
               }).toList(),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             _isLoading
-                ? CircularProgressIndicator()
+                ? const CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: _createOfficeAndRoom,
-                    child: Text('Create Office, Room, and Assign to User'),
+                    child:
+                        const Text('Create Office, Room, and Assign to User'),
                   ),
           ],
         ),

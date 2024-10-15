@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http; // Add this for making HTTP requests
 import 'office_screen.dart'; // Import OfficeScreen to pass user_id
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -57,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         // Handle login error
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
               content: Text('Login failed. Please check your credentials.')),
         );
       }
@@ -72,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Spaklean Login"),
+        title: const Text("Spaklean Login"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -81,17 +83,17 @@ class _LoginScreenState extends State<LoginScreen> {
           children: <Widget>[
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(labelText: 'Password'),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _login,
-              child: Text('Login'),
+              child: const Text('Login'),
             ),
           ],
         ),

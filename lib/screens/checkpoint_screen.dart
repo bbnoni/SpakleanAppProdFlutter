@@ -1,4 +1,4 @@
-import 'dart:convert'; // For JSON decoding
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -7,8 +7,13 @@ import 'package:intl/intl.dart';
 class CheckpointScreen extends StatefulWidget {
   final String roomId; // Room ID passed from ZoneDetailScreen
   final String roomName; // Room Name passed from ZoneDetailScreen
+  final String userId; // User ID for task submission
 
-  CheckpointScreen({required this.roomId, required this.roomName});
+  const CheckpointScreen(
+      {super.key,
+      required this.roomId,
+      required this.roomName,
+      required this.userId});
 
   @override
   _CheckpointScreenState createState() => _CheckpointScreenState();
@@ -77,13 +82,76 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     }
   }
 
+  // Function to submit task data to backend
+  Future<void> _submitDataToBackend() async {
+    _submissionTime = DateTime.now(); // Capture submission time
+
+    // Prepare the data to be sent
+    final data = {
+      "task_type": "Inspection", // The task type you want to save
+      "latitude": latitude,
+      "longitude": longitude,
+      "user_id": widget.userId, // Pass userId
+      "room_id": widget.roomId, // Pass roomId
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://spaklean-app-prod.onrender.com/api/tasks/submit'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 201) {
+        print("Task submitted successfully.");
+
+        // Show submission summary in a dialog
+        _showSubmissionSummary();
+      } else {
+        print("Failed to submit task: ${response.body}");
+      }
+    } catch (e) {
+      print("Error submitting task: $e");
+    }
+  }
+
+  // Function to show a summary dialog after submission
+  void _showSubmissionSummary() {
+    // Calculate score
+    double score = calculateScore();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Submission Summary'),
+          content: Text(
+            'Room: ${widget.roomName}\n'
+            'Submission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\n'
+            'Score: ${score.toStringAsFixed(2)}%\n'
+            'Location: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); // Navigate back to previous screen
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Checkpoint: ${widget.roomName}"), // Display room name
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -103,50 +171,20 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
             buildCategory('EQUIPMENT',
                 ['Dust', 'Cobweb', 'Stains', 'Fingerprints', 'None']),
             buildCategory('FLOOR', ['Clutter', 'Stains', 'Trash', 'None']),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
-                // Capture submission time
-                setState(() {
-                  _submissionTime = DateTime.now();
-                });
-
-                // Calculate score
-                double score = calculateScore();
-
-                // Show the results in a dialog
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Submission Details'),
-                      content: Text(
-                        'Room: ${widget.roomName}\n'
-                        'Submission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\n'
-                        'Score: ${score.toStringAsFixed(2)}%\n'
-                        'Location: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}',
-                      ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('OK'),
-                        ),
-                      ],
-                    );
-                  },
-                );
+                await _submitDataToBackend();
               },
-              child: Text('Submit', style: TextStyle(fontSize: 18)),
               style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                primary: Colors.purple,
+                backgroundColor: Colors.purple,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
+              child: const Text('Submit', style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
@@ -163,9 +201,9 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         children: [
           Text(
             category,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
@@ -185,7 +223,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               );
             }).toList(),
           ),
-          Divider(), // Add a divider between categories for better visual separation
+          const Divider(), // Add a divider between categories for better visual separation
         ],
       ),
     );

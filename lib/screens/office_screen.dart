@@ -8,7 +8,7 @@ import 'scoreboard_screen.dart'; // Import the ScoreboardScreen
 class OfficeScreen extends StatefulWidget {
   final String userId; // Add userId as a parameter to OfficeScreen
 
-  OfficeScreen({required this.userId});
+  const OfficeScreen({super.key, required this.userId});
 
   @override
   _OfficeScreenState createState() => _OfficeScreenState();
@@ -63,24 +63,27 @@ class _OfficeScreenState extends State<OfficeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Assigned Offices"),
+        title: const Text("Assigned Offices"),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : _assignedOffices.isEmpty
-              ? Center(child: Text('No offices assigned to you.'))
+              ? const Center(child: Text('No offices assigned to you.'))
               : ListView.builder(
                   itemCount: _assignedOffices.length,
                   itemBuilder: (context, index) {
                     return ListTile(
                       title: Text(_assignedOffices[index]['name']),
                       onTap: () {
-                        // Navigate to ScoreboardScreen and pass the userId
+                        // Navigate to ScoreboardScreen and pass the userId and officeId
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                ScoreboardScreen(userId: widget.userId),
+                            builder: (context) => ScoreboardScreen(
+                              userId: widget.userId, // Pass the userId
+                              officeId: _assignedOffices[index]['id']
+                                  .toString(), // Pass the officeId
+                            ),
                           ),
                         );
                       },
