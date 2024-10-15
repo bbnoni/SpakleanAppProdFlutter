@@ -43,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         // Navigate based on role
+        if (!mounted) return; // Ensure widget is still in the widget tree
         if (role == 'Admin') {
           Navigator.pushReplacementNamed(context, '/admin');
         } else if (role == 'Custodian') {
@@ -58,15 +59,19 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         // Handle login error
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Login failed. Please check your credentials.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Login failed. Please check your credentials.')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: $e')),
+        );
+      }
     }
   }
 

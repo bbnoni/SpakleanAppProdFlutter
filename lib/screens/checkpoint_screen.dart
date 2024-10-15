@@ -82,8 +82,29 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     }
   }
 
+  // Function to check if at least one item is selected in every category
+  bool _isChecklistComplete() {
+    for (var category in selections.keys) {
+      if (selections[category]!.isEmpty) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // Function to submit task data to backend
   Future<void> _submitDataToBackend() async {
+    // Check if all categories have at least one selected item
+    if (!_isChecklistComplete()) {
+      // Show a SnackBar if the checklist is incomplete
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select at least one item from each category.'),
+        ),
+      );
+      return;
+    }
+
     _submissionTime = DateTime.now(); // Capture submission time
 
     // Prepare the data to be sent

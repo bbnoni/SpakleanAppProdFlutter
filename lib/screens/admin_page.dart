@@ -23,7 +23,7 @@ class _AdminPageState extends State<AdminPage> {
   String? _selectedZone; // Currently selected zone
 
   // Available Roles and Zones
-  final List<String> _roles = ['Custodian', 'Admin'];
+  final List<String> _roles = ['Custodian', 'Admin', 'Manager', 'CEO'];
   final List<String> _zones = [
     'Low Traffic Areas (Yellow Zone)',
     'Heavy Traffic Areas (Orange Zone)',

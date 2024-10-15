@@ -72,10 +72,44 @@ class _CustodianRecordsScreenState extends State<CustodianRecordsScreen> {
               : ListView.builder(
                   itemCount: _records.length,
                   itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text('Task Type: ${_records[index]['task_type']}'),
-                      subtitle: Text(
-                          'Submitted on: ${_records[index]['date_submitted']}'),
+                    return Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            'Task Type: ${_records[index]['task_type']}',
+                            style: const TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            'Submitted on: ${_records[index]['date_submitted']}',
+                            style: const TextStyle(
+                              fontSize: 14.0,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 10.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          tileColor: Colors.grey.shade100,
+                          onTap: () {
+                            // You can implement further details or actions here
+                          },
+                        ),
+                        const Divider(
+                          color: Colors.grey,
+                          thickness: 1.0,
+                          indent: 16.0,
+                          endIndent: 16.0,
+                        ),
+                      ],
                     );
                   },
                 ),
