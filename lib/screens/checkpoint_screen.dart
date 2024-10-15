@@ -104,7 +104,6 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
 
       if (response.statusCode == 201) {
         print("Task submitted successfully.");
-
         // Show submission summary in a dialog
         _showSubmissionSummary();
       } else {
@@ -135,7 +134,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-                Navigator.of(context).pop(); // Navigate back to previous screen
+                Navigator.of(context)
+                    .pop(); // Navigate back to the previous screen
               },
               child: const Text('OK'),
             ),
@@ -166,11 +166,61 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
             buildCategory(
                 'WALLS', ['Cobweb', 'Dust', 'Marks', 'Mold', 'Stains', 'None']),
             buildCategory('CTP', ['Dust', 'Marks', 'None']),
-            buildCategory(
-                'WINDOWS', ['Cobweb', 'Dust', 'Fingerprints', 'None']),
+            buildCategory('WINDOWS', [
+              'Cobweb',
+              'Droppings',
+              'Dust',
+              'Fingerprints',
+              'Water stains',
+              'Mud',
+              'Stains',
+              'None'
+            ]),
             buildCategory('EQUIPMENT',
                 ['Dust', 'Cobweb', 'Stains', 'Fingerprints', 'None']),
-            buildCategory('FLOOR', ['Clutter', 'Stains', 'Trash', 'None']),
+            buildCategory('FURNITURE', [
+              'Clutter',
+              'Cobweb',
+              'Dust',
+              'Fingerprints',
+              'Gums',
+              'Ink marks',
+              'Stains',
+              'None'
+            ]),
+            buildCategory('DÉCOR', ['Dust', 'Cobweb', 'None']),
+            buildCategory('FLOOR', [
+              'Clutter',
+              'Corner Stains',
+              'Droppings',
+              'Dust',
+              'Dirty Grout',
+              'Gums',
+              'Microbes',
+              'Mop Marks',
+              'Mold',
+              'Mud',
+              'Odor',
+              'Sand',
+              'Shoe marks',
+              'Spills',
+              'Trash',
+              'None'
+            ]),
+            buildCategory('CARPET', [
+              'Clutter',
+              'Droppings',
+              'Dust',
+              'Gums',
+              'Microbes',
+              'Mud',
+              'Odor',
+              'Sand',
+              'Spills',
+              'Stains',
+              'Trash',
+              'None'
+            ]),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
@@ -179,7 +229,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               style: ElevatedButton.styleFrom(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                backgroundColor: Colors.purple,
+                backgroundColor: Colors.black,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -195,15 +245,19 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   // Helper to build checklist categories
   Widget buildCategory(String category, List<String> options) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(
+          vertical: 16.0), // Adds padding to each category
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             category,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Wrap(
             spacing: 8.0,
             runSpacing: 8.0,
@@ -223,7 +277,11 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               );
             }).toList(),
           ),
-          const Divider(), // Add a divider between categories for better visual separation
+          const SizedBox(height: 10), // Space between filter chips and divider
+          const Divider(
+            thickness: 2.0, // Thicker divider for better visual separation
+            color: Colors.grey, // Change divider color
+          ),
         ],
       ),
     );

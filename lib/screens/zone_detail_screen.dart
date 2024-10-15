@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'checkpoint_screen.dart'; // Import CheckpointScreen
+import 'facility_inspection_screen.dart'; // Import FacilityInspectionScreen
 
 class ZoneDetailScreen extends StatefulWidget {
   final String zone;
@@ -101,69 +102,104 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       appBar: AppBar(
         title: Text(widget.zone), // Display the zone name in the title
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _rooms.isEmpty
-              ? const Center(child: Text('No rooms found for this zone'))
-              : ListView.builder(
-                  itemCount: _rooms.length,
-                  itemBuilder: (context, index) {
-                    final zoneColor = _getZoneColor(widget.zone);
-                    final textColor = _getTextColor(widget.zone);
-                    return Column(
-                      children: [
-                        ListTile(
-                          title: Text(
-                            _rooms[index]['name'],
-                            style: TextStyle(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: textColor,
-                            ),
-                          ),
-                          subtitle: Text(
-                            'Zone: ${_rooms[index]['zone']}',
-                            style: TextStyle(
-                              fontSize: 14.0,
-                              color: textColor.withOpacity(0.7),
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            color: textColor,
-                          ),
-                          tileColor: zoneColor.withOpacity(0.9),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
-                          onTap: () {
-                            // Navigate to CheckpointScreen when a room is tapped
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CheckpointScreen(
-                                  roomId: _rooms[index]['id']
-                                      .toString(), // Pass room ID
-                                  roomName: _rooms[index]
-                                      ['name'], // Pass room name
-                                  userId: widget.userId, // Pass userId
+      body: Column(
+        children: [
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _rooms.isEmpty
+                    ? const Center(child: Text('No rooms found for this zone'))
+                    : ListView.builder(
+                        itemCount: _rooms.length,
+                        itemBuilder: (context, index) {
+                          final zoneColor = _getZoneColor(widget.zone);
+                          final textColor = _getTextColor(widget.zone);
+                          return Column(
+                            children: [
+                              ListTile(
+                                title: Text(
+                                  _rooms[index]['name'],
+                                  style: TextStyle(
+                                    fontSize: 18.0,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
                                 ),
+                                subtitle: Text(
+                                  'Zone: ${_rooms[index]['zone']}',
+                                  style: TextStyle(
+                                    fontSize: 14.0,
+                                    color: textColor.withOpacity(0.7),
+                                  ),
+                                ),
+                                trailing: Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: textColor,
+                                ),
+                                tileColor: zoneColor.withOpacity(0.9),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0, vertical: 8.0),
+                                onTap: () {
+                                  // Navigate to CheckpointScreen when a room is tapped
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CheckpointScreen(
+                                        roomId: _rooms[index]['id']
+                                            .toString(), // Pass room ID
+                                        roomName: _rooms[index]
+                                            ['name'], // Pass room name
+                                        userId: widget.userId, // Pass userId
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
-                            );
-                          },
-                        ),
-                        const Divider(
-                          color: Colors.grey,
-                          thickness: 1.0,
-                          indent: 16.0,
-                          endIndent: 16.0,
-                        ),
-                      ],
-                    );
-                  },
+                              const Divider(
+                                color: Colors.grey,
+                                thickness: 1.0,
+                                indent: 16.0,
+                                endIndent: 16.0,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                // Navigate back to the FacilityInspectionScreen
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => FacilityInspectionScreen(
+                      userId: widget.userId, // Pass the userId back
+                      officeId: widget.officeId, // Pass the officeId back
+                    ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                backgroundColor: Colors.blue, // Blue color for the button
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
+              ),
+              child: const Text(
+                'Back to Facility Inspection',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
