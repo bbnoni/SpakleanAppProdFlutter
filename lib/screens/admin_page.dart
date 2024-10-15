@@ -11,18 +11,28 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> {
+  // Controllers for Create User Section
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String? _selectedRole;
+
+  // Controllers for Create Office and Room Section
   final _officeController = TextEditingController();
   final _roomController = TextEditingController();
-  List<dynamic> _users = []; // List to store users
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
+
+  // Available Roles and Zones
+  final List<String> _roles = ['Custodian', 'Admin'];
   final List<String> _zones = [
     'Low Traffic Areas (Yellow Zone)',
     'Heavy Traffic Areas (Orange Zone)',
     'Food Service Areas (Green Zone)',
     'High Microbial Areas (Red Zone)',
     'Outdoors & Exteriors (Black Zone)'
-  ]; // Available zones
+  ];
+
+  List<dynamic> _users = []; // List to store users
   bool _isLoading = false; // Loading indicator for API requests
 
   @override
@@ -59,7 +69,51 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
-  // Method to create a new office and room, assigning it to the selected user and zone
+  // Method to create a new user (for the Create User section)
+  Future<void> _createUser() async {
+    final username = _usernameController.text;
+    final password = _passwordController.text;
+    final role = _selectedRole;
+
+    if (username.isEmpty || password.isEmpty || role == null) {
+      _showError('Please enter all required fields.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://spaklean-app-prod.onrender.com/api/auth/register'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'username': username,
+          'password': password,
+          'role': role, // Pass the selected role
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        _showSuccess('User created successfully.');
+        _fetchUsers(); // Refresh the list of users
+        _clearUserInput(); // Clear input fields after successful creation
+      } else {
+        _showError('Failed to create user.');
+      }
+    } catch (e) {
+      _showError('An error occurred while creating the user.');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Method to create a new office and room (for the Create Office and Room section)
   Future<void> _createOfficeAndRoom() async {
     final officeName = _officeController.text;
     final roomName = _roomController.text;
@@ -95,6 +149,7 @@ class _AdminPageState extends State<AdminPage> {
 
       if (response.statusCode == 201) {
         _showSuccess('Office and room created and assigned successfully.');
+        _clearOfficeAndRoomInput(); // Clear input fields after successful creation
       } else {
         _showError('Failed to create office and room.');
       }
@@ -107,16 +162,46 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
+  // Clear user input fields
+  void _clearUserInput() {
+    _usernameController.clear();
+    _passwordController.clear();
+    setState(() {
+      _selectedRole = null;
+    });
+  }
+
+  // Clear office and room input fields
+  void _clearOfficeAndRoomInput() {
+    _officeController.clear();
+    _roomController.clear();
+    setState(() {
+      _selectedUser = null;
+      _selectedZone = null;
+    });
+  }
+
   // Show an error message
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   // Show a success message
   void _showSuccess(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(
+            seconds: 2), // Notification disappears after 2 seconds
+      ),
+    );
   }
 
   @override
@@ -127,61 +212,106 @@ class _AdminPageState extends State<AdminPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            TextField(
-              controller: _officeController,
-              decoration: const InputDecoration(labelText: 'Create New Office'),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _roomController,
-              decoration: const InputDecoration(labelText: 'Create New Room'),
-            ),
-            const SizedBox(height: 10),
-            DropdownButton<String>(
-              value: _selectedUser,
-              hint: const Text('Select a User to Assign Office and Room'),
-              isExpanded: true,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedUser = newValue;
-                });
-              },
-              items: _users.map((user) {
-                return DropdownMenuItem<String>(
-                  value: user['id'].toString(),
-                  child: Text(user['username']),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 10),
-            DropdownButton<String>(
-              value: _selectedZone,
-              hint: const Text('Select a Zone'),
-              isExpanded: true,
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedZone = newValue;
-                });
-              },
-              items: _zones.map((zone) {
-                return DropdownMenuItem<String>(
-                  value: zone,
-                  child: Text(zone),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 10),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _createOfficeAndRoom,
-                    child:
-                        const Text('Create Office, Room, and Assign to User'),
-                  ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // Section for creating a new user
+              const Text('Create New User',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              TextField(
+                controller: _usernameController,
+                decoration: const InputDecoration(labelText: 'Username'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _passwordController,
+                decoration: const InputDecoration(labelText: 'Password'),
+                obscureText: true, // Hide the password text
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: _selectedRole,
+                hint: const Text('Select Role'),
+                isExpanded: true,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedRole = newValue;
+                  });
+                },
+                items: _roles.map((role) {
+                  return DropdownMenuItem<String>(
+                    value: role,
+                    child: Text(role),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _createUser,
+                      child: const Text('Create User'),
+                    ),
+              const Divider(), // Divider to separate the sections
+
+              // Section for creating a new office and room
+              const Text('Create New Office and Room',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              TextField(
+                controller: _officeController,
+                decoration:
+                    const InputDecoration(labelText: 'Create New Office'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _roomController,
+                decoration: const InputDecoration(labelText: 'Create New Room'),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: _selectedUser,
+                hint: const Text('Select a User to Assign Office and Room'),
+                isExpanded: true,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedUser = newValue;
+                  });
+                },
+                items: _users.map((user) {
+                  return DropdownMenuItem<String>(
+                    value: user['id'].toString(),
+                    child: Text(user['username']),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: _selectedZone,
+                hint: const Text('Select a Zone'),
+                isExpanded: true,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedZone = newValue;
+                  });
+                },
+                items: _zones.map((zone) {
+                  return DropdownMenuItem<String>(
+                    value: zone,
+                    child: Text(zone),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _createOfficeAndRoom,
+                      child:
+                          const Text('Create Office, Room, and Assign to User'),
+                    ),
+            ],
+          ),
         ),
       ),
     );
