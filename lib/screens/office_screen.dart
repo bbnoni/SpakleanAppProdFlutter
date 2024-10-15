@@ -72,21 +72,51 @@ class _OfficeScreenState extends State<OfficeScreen> {
               : ListView.builder(
                   itemCount: _assignedOffices.length,
                   itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text(_assignedOffices[index]['name']),
-                      onTap: () {
-                        // Navigate to ScoreboardScreen and pass the userId and officeId
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ScoreboardScreen(
-                              userId: widget.userId, // Pass the userId
-                              officeId: _assignedOffices[index]['id']
-                                  .toString(), // Pass the officeId
+                    return Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            _assignedOffices[index]['name'],
+                            style: const TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                        );
-                      },
+                          subtitle: const Text(
+                            'Tap to view more details',
+                            style: TextStyle(fontSize: 14.0),
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.grey,
+                          ),
+                          tileColor: Colors.blue.shade50,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 8.0),
+                          onTap: () {
+                            // Navigate to ScoreboardScreen and pass the userId and officeId
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ScoreboardScreen(
+                                  userId: widget.userId, // Pass the userId
+                                  officeId: _assignedOffices[index]['id']
+                                      .toString(), // Pass the officeId
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const Divider(
+                          color: Colors.grey,
+                          thickness: 1.0,
+                          indent: 16.0,
+                          endIndent: 16.0,
+                        ),
+                      ],
                     );
                   },
                 ),
