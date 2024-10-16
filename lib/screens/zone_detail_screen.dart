@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'checkpoint_screen.dart'; // Import CheckpointScreen
-import 'facility_inspection_screen.dart'; // Import FacilityInspectionScreen
 
 class ZoneDetailScreen extends StatefulWidget {
   final String zone;
@@ -114,9 +113,22 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                         itemBuilder: (context, index) {
                           final zoneColor = _getZoneColor(widget.zone);
                           final textColor = _getTextColor(widget.zone);
-                          return Column(
-                            children: [
-                              ListTile(
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 8.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: zoneColor.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(12.0),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.4),
+                                    blurRadius: 6.0,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
                                 title: Text(
                                   _rooms[index]['name'],
                                   style: TextStyle(
@@ -136,12 +148,11 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                                   Icons.arrow_forward_ios,
                                   color: textColor,
                                 ),
-                                tileColor: zoneColor.withOpacity(0.9),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16.0, vertical: 8.0),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
                                 onTap: () {
                                   // Navigate to CheckpointScreen when a room is tapped
                                   Navigator.push(
@@ -158,46 +169,40 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                                   );
                                 },
                               ),
-                              const Divider(
-                                color: Colors.grey,
-                                thickness: 1.0,
-                                indent: 16.0,
-                                endIndent: 16.0,
-                              ),
-                            ],
+                            ),
                           );
                         },
                       ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                // Navigate back to the FacilityInspectionScreen
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FacilityInspectionScreen(
-                      userId: widget.userId, // Pass the userId back
-                      officeId: widget.officeId, // Pass the officeId back
-                    ),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                backgroundColor: Colors.blue, // Blue color for the button
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text(
-                'Back to Facility Inspection',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(16.0),
+          //   child: ElevatedButton(
+          //     onPressed: () {
+          //       // Navigate back to the FacilityInspectionScreen
+          //       Navigator.pushReplacement(
+          //         context,
+          //         MaterialPageRoute(
+          //           builder: (context) => FacilityInspectionScreen(
+          //             userId: widget.userId, // Pass the userId back
+          //             officeId: widget.officeId, // Pass the officeId back
+          //           ),
+          //         ),
+          //       );
+          //     },
+          //     style: ElevatedButton.styleFrom(
+          //       padding:
+          //           const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+          //       backgroundColor: Colors.blue, // Blue color for the button
+          //       shape: RoundedRectangleBorder(
+          //         borderRadius: BorderRadius.circular(20),
+          //       ),
+          //     ),
+          //     child: const Text(
+          //       'Back to Facility Inspection',
+          //       style: TextStyle(fontSize: 18, color: Colors.white),
+          //     ),
+          //   ),
+          // ),
         ],
       ),
     );

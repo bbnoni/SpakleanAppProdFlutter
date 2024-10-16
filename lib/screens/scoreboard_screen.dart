@@ -16,13 +16,18 @@ class ScoreboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scoreboard - Spaklean'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor:
+            Colors.blueAccent, // A consistent color for the app bar
       ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding:
+            const EdgeInsets.all(16.0), // Adjust padding for a cleaner layout
         child: GridView.count(
           crossAxisCount: 2,
-          crossAxisSpacing: 8.0,
-          mainAxisSpacing: 8.0,
+          crossAxisSpacing: 16.0, // Consistent horizontal spacing
+          mainAxisSpacing: 16.0, // Consistent vertical spacing
           children: <Widget>[
             _buildGridTile(
               context,
@@ -112,22 +117,30 @@ class ScoreboardScreen extends StatelessWidget {
         }
       },
       child: Container(
-        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8.0),
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16.0), // Rounded corners
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: const Offset(0, 3), // changes position of shadow
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Icon(icon, size: 50, color: color),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
           ],

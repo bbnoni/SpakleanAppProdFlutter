@@ -243,35 +243,39 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            buildCategory('CEILING', defectOptions['CEILING']!),
-            buildCategory('WALLS', defectOptions['WALLS']!),
-            buildCategory('CTP', defectOptions['CTP']!),
-            buildCategory('WINDOWS', defectOptions['WINDOWS']!),
-            buildCategory('EQUIPMENT', defectOptions['EQUIPMENT']!),
-            buildCategory('FURNITURE', defectOptions['FURNITURE']!),
-            buildCategory('DÉCOR', defectOptions['DÉCOR']!),
-            buildCategory('FLOOR', defectOptions['FLOOR']!),
-            buildCategory('CARPET', defectOptions['CARPET']!),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () async {
-                await _submitDataToBackend();
-              },
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                backgroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+      body: Container(
+        color: Colors.lightBlue[50], // Light blue background
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              buildCategory('CEILING', defectOptions['CEILING']!),
+              buildCategory('WALLS', defectOptions['WALLS']!),
+              buildCategory('CTP', defectOptions['CTP']!),
+              buildCategory('WINDOWS', defectOptions['WINDOWS']!),
+              buildCategory('EQUIPMENT', defectOptions['EQUIPMENT']!),
+              buildCategory('FURNITURE', defectOptions['FURNITURE']!),
+              buildCategory('DÉCOR', defectOptions['DÉCOR']!),
+              buildCategory('FLOOR', defectOptions['FLOOR']!),
+              buildCategory('CARPET', defectOptions['CARPET']!),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () async {
+                  await _submitDataToBackend();
+                },
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
+                child: const Text('Submit',
+                    style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
-              child: const Text('Submit', style: TextStyle(fontSize: 18)),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

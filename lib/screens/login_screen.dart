@@ -55,8 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final role = responseData['role'];
         final userId = responseData['user_id'];
         final accessToken = responseData['access_token']; // Fetch access token
-        final passwordChangeRequired = responseData[
-            'password_change_required']; // Check if password change is required
+        final passwordChangeRequired = responseData['password_change_required'];
 
         if (userId == null) {
           throw Exception("User ID is null");
@@ -122,29 +121,69 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Spaklean Login"),
+        centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password'),
-            ),
-            const SizedBox(height: 20),
-            _isLoading
-                ? const CircularProgressIndicator() // Show loading indicator
-                : ElevatedButton(
-                    onPressed: _login,
-                    child: const Text('Login'),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              const Text(
+                'Welcome Back!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(height: 32), // Add spacing
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
                   ),
-          ],
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 16.0),
+                ),
+              ),
+              const SizedBox(height: 16), // Add spacing between input fields
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                      vertical: 16.0, horizontal: 16.0),
+                ),
+              ),
+              const SizedBox(height: 24), // Add more space above login button
+              _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator()) // Loading indicator
+                  : ElevatedButton(
+                      onPressed: _login,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                      ),
+                      child: const Text(
+                        'Login',
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+            ],
+          ),
         ),
       ),
     );
