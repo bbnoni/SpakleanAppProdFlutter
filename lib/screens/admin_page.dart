@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add secure storage for token
 import 'package:http/http.dart' as http;
 
 class AdminPage extends StatefulWidget {
@@ -11,6 +12,9 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> {
+  // Add secure storage instance
+  final storage = const FlutterSecureStorage();
+
   // Controllers for Create User Section
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -21,6 +25,12 @@ class _AdminPageState extends State<AdminPage> {
   final _roomController = TextEditingController();
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
+
+  // Controllers for Change Password Section
+  final _currentPasswordController =
+      TextEditingController(); // Controller for current password
+  final _newPasswordController =
+      TextEditingController(); // Controller for new password
 
   // Available Roles and Zones
   final List<String> _roles = ['Custodian', 'Admin', 'Manager', 'CEO'];
@@ -113,6 +123,64 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
+  // Method to change the password of an existing user
+  Future<void> _changePassword() async {
+    final userId = _selectedUser;
+    final currentPassword =
+        _currentPasswordController.text; // Get current password
+    final newPassword = _newPasswordController.text; // Get new password
+
+    if (userId == null || currentPassword.isEmpty || newPassword.isEmpty) {
+      _showError('Please enter current and new passwords.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Retrieve the stored JWT token
+      final token = await storage.read(key: 'access_token');
+
+      if (token == null) {
+        _showError('You are not authenticated.');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse(
+            'https://spaklean-app-prod.onrender.com/api/auth/change_password'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':
+              'Bearer $token', // Include the JWT token in the headers
+        },
+        body: jsonEncode({
+          'user_id': userId,
+          'current_password': currentPassword, // Include current password
+          'new_password': newPassword, // Include new password
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        _showSuccess('Password changed successfully.');
+        _clearPasswordInput(); // Clear input fields after password change
+      } else {
+        _showError('Failed to change password.');
+      }
+    } catch (e) {
+      _showError('An error occurred while changing the password.');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   // Method to create a new office and room (for the Create Office and Room section)
   Future<void> _createOfficeAndRoom() async {
     final officeName = _officeController.text;
@@ -169,6 +237,12 @@ class _AdminPageState extends State<AdminPage> {
     setState(() {
       _selectedRole = null;
     });
+  }
+
+  // Clear password input fields
+  void _clearPasswordInput() {
+    _currentPasswordController.clear();
+    _newPasswordController.clear();
   }
 
   // Clear office and room input fields
@@ -252,6 +326,48 @@ class _AdminPageState extends State<AdminPage> {
                   : ElevatedButton(
                       onPressed: _createUser,
                       child: const Text('Create User'),
+                    ),
+              const Divider(), // Divider to separate the sections
+
+              // Section for changing a user's password
+              const Text('Change User Password',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              DropdownButton<String>(
+                value: _selectedUser,
+                hint: const Text('Select User to Change Password'),
+                isExpanded: true,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedUser = newValue;
+                  });
+                },
+                items: _users.map((user) {
+                  return DropdownMenuItem<String>(
+                    value: user['id'].toString(),
+                    child: Text(user['username']),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller:
+                    _currentPasswordController, // Field for current password
+                decoration:
+                    const InputDecoration(labelText: 'Current Password'),
+                obscureText: true, // Hide the password text
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _newPasswordController, // Field for new password
+                decoration: const InputDecoration(labelText: 'New Password'),
+                obscureText: true, // Hide the password text
+              ),
+              const SizedBox(height: 10),
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _changePassword,
+                      child: const Text('Change Password'),
                     ),
               const Divider(), // Divider to separate the sections
 
