@@ -26,9 +26,7 @@ class _AdminPageState extends State<AdminPage> {
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
 
-  // Controllers for Change Password Section
-  final _currentPasswordController =
-      TextEditingController(); // Controller for current password
+  // Controller for Reset Password Section
   final _newPasswordController =
       TextEditingController(); // Controller for new password
 
@@ -123,15 +121,13 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
-  // Method to change the password of an existing user
-  Future<void> _changePassword() async {
+  // Method to reset the password of an existing user (no need for current password)
+  Future<void> _resetPassword() async {
     final userId = _selectedUser;
-    final currentPassword =
-        _currentPasswordController.text; // Get current password
-    final newPassword = _newPasswordController.text; // Get new password
+    final newPassword = _newPasswordController.text;
 
-    if (userId == null || currentPassword.isEmpty || newPassword.isEmpty) {
-      _showError('Please enter current and new passwords.');
+    if (userId == null || newPassword.isEmpty) {
+      _showError('Please select a user and enter a new password.');
       return;
     }
 
@@ -153,7 +149,7 @@ class _AdminPageState extends State<AdminPage> {
 
       final response = await http.post(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/auth/change_password'),
+            'https://spaklean-app-prod.onrender.com/api/auth/reset_password'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization':
@@ -161,19 +157,18 @@ class _AdminPageState extends State<AdminPage> {
         },
         body: jsonEncode({
           'user_id': userId,
-          'current_password': currentPassword, // Include current password
           'new_password': newPassword, // Include new password
         }),
       );
 
       if (response.statusCode == 200) {
-        _showSuccess('Password changed successfully.');
-        _clearPasswordInput(); // Clear input fields after password change
+        _showSuccess('Password reset successfully.');
+        _clearPasswordInput(); // Clear input fields after password reset
       } else {
-        _showError('Failed to change password.');
+        _showError('Failed to reset password.');
       }
     } catch (e) {
-      _showError('An error occurred while changing the password.');
+      _showError('An error occurred while resetting the password.');
     } finally {
       setState(() {
         _isLoading = false;
@@ -241,7 +236,6 @@ class _AdminPageState extends State<AdminPage> {
 
   // Clear password input fields
   void _clearPasswordInput() {
-    _currentPasswordController.clear();
     _newPasswordController.clear();
   }
 
@@ -329,12 +323,12 @@ class _AdminPageState extends State<AdminPage> {
                     ),
               const Divider(), // Divider to separate the sections
 
-              // Section for changing a user's password
-              const Text('Change User Password',
+              // Section for resetting a user's password
+              const Text('Reset User Password',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               DropdownButton<String>(
                 value: _selectedUser,
-                hint: const Text('Select User to Change Password'),
+                hint: const Text('Select User to Reset Password'),
                 isExpanded: true,
                 onChanged: (String? newValue) {
                   setState(() {
@@ -350,14 +344,6 @@ class _AdminPageState extends State<AdminPage> {
               ),
               const SizedBox(height: 10),
               TextField(
-                controller:
-                    _currentPasswordController, // Field for current password
-                decoration:
-                    const InputDecoration(labelText: 'Current Password'),
-                obscureText: true, // Hide the password text
-              ),
-              const SizedBox(height: 10),
-              TextField(
                 controller: _newPasswordController, // Field for new password
                 decoration: const InputDecoration(labelText: 'New Password'),
                 obscureText: true, // Hide the password text
@@ -366,8 +352,8 @@ class _AdminPageState extends State<AdminPage> {
               _isLoading
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
-                      onPressed: _changePassword,
-                      child: const Text('Change Password'),
+                      onPressed: _resetPassword,
+                      child: const Text('Reset Password'),
                     ),
               const Divider(), // Divider to separate the sections
 
