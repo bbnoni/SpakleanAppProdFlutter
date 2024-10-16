@@ -26,6 +26,66 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   double? latitude; // To store fetched latitude
   double? longitude; // To store fetched longitude
 
+  final Map<String, List<String>> defectOptions = {
+    'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None'],
+    'WALLS': ['Cobweb', 'Dust', 'Marks', 'Mold', 'Stains', 'None'],
+    'CTP': ['Dust', 'Marks', 'None'],
+    'WINDOWS': [
+      'Cobweb',
+      'Droppings',
+      'Dust',
+      'Fingerprints',
+      'Water stains',
+      'Mud',
+      'Stains',
+      'None'
+    ],
+    'EQUIPMENT': ['Dust', 'Cobweb', 'Stains', 'Fingerprints', 'None'],
+    'FURNITURE': [
+      'Clutter',
+      'Cobweb',
+      'Dust',
+      'Fingerprints',
+      'Gums',
+      'Ink marks',
+      'Stains',
+      'None'
+    ],
+    'DÉCOR': ['Dust', 'Cobweb', 'None'],
+    'CARPET': [
+      'Clutter',
+      'Droppings',
+      'Dust',
+      'Gums',
+      'Microbes',
+      'Mud',
+      'Odor',
+      'Sand',
+      'Spills',
+      'Stains',
+      'Trash',
+      'None'
+    ],
+    'FLOOR': [
+      'Clutter',
+      'Corner Stains',
+      'Droppings',
+      'Dust',
+      'Dirty Grout',
+      'Gums',
+      'Microbes',
+      'Mop Marks',
+      'Mold',
+      'Mud',
+      'Odor',
+      'Sand',
+      'Shoe marks',
+      'Spills',
+      'Trash',
+      'None'
+    ]
+  };
+
   @override
   void initState() {
     super.initState();
@@ -48,14 +108,19 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   // Function to calculate the percentage score of the checklist
   double calculateScore() {
     int totalOptions = 0;
-    int selectedOptions = 0;
+    int defectOptionsSelected = 0;
 
     selections.forEach((key, value) {
-      totalOptions += value.length;
-      selectedOptions += value.isNotEmpty ? 1 : 0;
+      totalOptions += defectOptions[key]!.length - 1; // Exclude "None" option
+      if (!value.contains('None')) {
+        defectOptionsSelected +=
+            value.intersection(defectOptions[key]!.toSet()).length;
+      }
     });
 
-    return totalOptions == 0 ? 0 : (selectedOptions / totalOptions) * 100;
+    // Calculate score based on non-defect options
+    int nonDefectSelections = totalOptions - defectOptionsSelected;
+    return totalOptions == 0 ? 0 : (nonDefectSelections / totalOptions) * 100;
   }
 
   // Function to fetch location from IP
@@ -182,66 +247,15 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            buildCategory(
-                'CEILING', ['Cobweb', 'Dust', 'Mold', 'Stains', 'None']),
-            buildCategory(
-                'WALLS', ['Cobweb', 'Dust', 'Marks', 'Mold', 'Stains', 'None']),
-            buildCategory('CTP', ['Dust', 'Marks', 'None']),
-            buildCategory('WINDOWS', [
-              'Cobweb',
-              'Droppings',
-              'Dust',
-              'Fingerprints',
-              'Water stains',
-              'Mud',
-              'Stains',
-              'None'
-            ]),
-            buildCategory('EQUIPMENT',
-                ['Dust', 'Cobweb', 'Stains', 'Fingerprints', 'None']),
-            buildCategory('FURNITURE', [
-              'Clutter',
-              'Cobweb',
-              'Dust',
-              'Fingerprints',
-              'Gums',
-              'Ink marks',
-              'Stains',
-              'None'
-            ]),
-            buildCategory('DÉCOR', ['Dust', 'Cobweb', 'None']),
-            buildCategory('FLOOR', [
-              'Clutter',
-              'Corner Stains',
-              'Droppings',
-              'Dust',
-              'Dirty Grout',
-              'Gums',
-              'Microbes',
-              'Mop Marks',
-              'Mold',
-              'Mud',
-              'Odor',
-              'Sand',
-              'Shoe marks',
-              'Spills',
-              'Trash',
-              'None'
-            ]),
-            buildCategory('CARPET', [
-              'Clutter',
-              'Droppings',
-              'Dust',
-              'Gums',
-              'Microbes',
-              'Mud',
-              'Odor',
-              'Sand',
-              'Spills',
-              'Stains',
-              'Trash',
-              'None'
-            ]),
+            buildCategory('CEILING', defectOptions['CEILING']!),
+            buildCategory('WALLS', defectOptions['WALLS']!),
+            buildCategory('CTP', defectOptions['CTP']!),
+            buildCategory('WINDOWS', defectOptions['WINDOWS']!),
+            buildCategory('EQUIPMENT', defectOptions['EQUIPMENT']!),
+            buildCategory('FURNITURE', defectOptions['FURNITURE']!),
+            buildCategory('DÉCOR', defectOptions['DÉCOR']!),
+            buildCategory('FLOOR', defectOptions['FLOOR']!),
+            buildCategory('CARPET', defectOptions['CARPET']!),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () async {
@@ -274,9 +288,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
           Text(
             category,
             style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -290,6 +305,12 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
                   setState(() {
                     if (selected) {
                       selections[category]?.add(option);
+                      if (option == 'None') {
+                        selections[category]!.clear();
+                        selections[category]!.add('None');
+                      } else {
+                        selections[category]?.remove('None');
+                      }
                     } else {
                       selections[category]?.remove(option);
                     }
