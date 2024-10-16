@@ -25,6 +25,7 @@ class FacilityInspectionScreen extends StatelessWidget {
             _buildInspectionTile(
               context,
               'Low Traffic Areas\nYellow Zone',
+              textColor: Colors.black,
               Colors.yellow,
               Icons.traffic,
               'Low Traffic Areas (Yellow Zone)',
