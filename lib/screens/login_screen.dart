@@ -21,7 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false; // To show loading indicator during login
 
   void _login() async {
-    final email = _emailController.text;
+    final email = _emailController.text
+        .trim()
+        .toLowerCase(); // Convert email to lowercase
     final password = _passwordController.text;
 
     // Check if fields are empty
@@ -45,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'username': email,
+          'username': email, // Send lowercased email
           'password': password,
         }),
       );

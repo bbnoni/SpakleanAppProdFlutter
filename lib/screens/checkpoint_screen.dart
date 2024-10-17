@@ -51,7 +51,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'Stains',
       'None'
     ],
-    'DÉCOR': ['Dust', 'Cobweb', 'None'],
+    'DECOR': ['Dust', 'Cobweb', 'None'],
     'CARPET': [
       'Clutter',
       'Droppings',
@@ -97,7 +97,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'WINDOWS': {},
       'EQUIPMENT': {},
       'FURNITURE': {},
-      'DÉCOR': {},
+      'DECOR': {},
       'FLOOR': {},
       'CARPET': {},
     };
@@ -255,7 +255,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               buildCategory('WINDOWS', defectOptions['WINDOWS']!),
               buildCategory('EQUIPMENT', defectOptions['EQUIPMENT']!),
               buildCategory('FURNITURE', defectOptions['FURNITURE']!),
-              buildCategory('DÉCOR', defectOptions['DÉCOR']!),
+              buildCategory('DECOR', defectOptions['DECOR']!),
               buildCategory('FLOOR', defectOptions['FLOOR']!),
               buildCategory('CARPET', defectOptions['CARPET']!),
               const SizedBox(height: 20),
