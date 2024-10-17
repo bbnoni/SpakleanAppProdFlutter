@@ -42,6 +42,11 @@ class _AdminPageState extends State<AdminPage> {
 
   List<dynamic> _users = []; // List to store users
   bool _isLoading = false; // Loading indicator for API requests
+  List<bool> _isExpanded = [
+    false,
+    false,
+    false
+  ]; // Track which panels are expanded
 
   @override
   void initState() {
@@ -266,8 +271,7 @@ class _AdminPageState extends State<AdminPage> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.green,
-        duration: const Duration(
-            seconds: 2), // Notification disappears after 2 seconds
+        duration: const Duration(seconds: 2),
       ),
     );
   }
@@ -284,134 +288,171 @@ class _AdminPageState extends State<AdminPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              // Section for creating a new user
-              const Text('Create New User',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextField(
-                controller: _usernameController,
-                decoration: const InputDecoration(labelText: 'Username'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _passwordController,
-                decoration: const InputDecoration(labelText: 'Password'),
-                obscureText: true, // Hide the password text
-              ),
-              const SizedBox(height: 10),
-              DropdownButton<String>(
-                value: _selectedRole,
-                hint: const Text('Select Role'),
-                isExpanded: true,
-                onChanged: (String? newValue) {
+              ExpansionPanelList(
+                expansionCallback: (int index, bool isExpanded) {
                   setState(() {
-                    _selectedRole = newValue;
+                    _isExpanded[index] = !_isExpanded[index];
                   });
                 },
-                items: _roles.map((role) {
-                  return DropdownMenuItem<String>(
-                    value: role,
-                    child: Text(role),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 10),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _createUser,
-                      child: const Text('Create User'),
+                children: [
+                  ExpansionPanel(
+                    headerBuilder: (context, isExpanded) {
+                      return const ListTile(
+                        title: Text('Create New User'),
+                      );
+                    },
+                    body: Column(
+                      children: [
+                        TextField(
+                          controller: _usernameController,
+                          decoration:
+                              const InputDecoration(labelText: 'Username'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _passwordController,
+                          decoration:
+                              const InputDecoration(labelText: 'Password'),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButton<String>(
+                          value: _selectedRole,
+                          hint: const Text('Select Role'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedRole = newValue;
+                            });
+                          },
+                          items: _roles.map((role) {
+                            return DropdownMenuItem<String>(
+                              value: role,
+                              child: Text(role),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _createUser,
+                                child: const Text('Create User'),
+                              ),
+                      ],
                     ),
-              const Divider(), // Divider to separate the sections
-
-              // Section for resetting a user's password
-              const Text('Reset User Password',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              DropdownButton<String>(
-                value: _selectedUser,
-                hint: const Text('Select User to Reset Password'),
-                isExpanded: true,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedUser = newValue;
-                  });
-                },
-                items: _users.map((user) {
-                  return DropdownMenuItem<String>(
-                    value: user['id'].toString(),
-                    child: Text(user['username']),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _newPasswordController, // Field for new password
-                decoration: const InputDecoration(labelText: 'New Password'),
-                obscureText: true, // Hide the password text
-              ),
-              const SizedBox(height: 10),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _resetPassword,
-                      child: const Text('Reset Password'),
+                    isExpanded: _isExpanded[0],
+                  ),
+                  ExpansionPanel(
+                    headerBuilder: (context, isExpanded) {
+                      return const ListTile(
+                        title: Text('Reset User Password'),
+                      );
+                    },
+                    body: Column(
+                      children: [
+                        DropdownButton<String>(
+                          value: _selectedUser,
+                          hint: const Text('Select User to Reset Password'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedUser = newValue;
+                            });
+                          },
+                          items: _users.map((user) {
+                            return DropdownMenuItem<String>(
+                              value: user['id'].toString(),
+                              child: Text(user['username']),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _newPasswordController,
+                          decoration:
+                              const InputDecoration(labelText: 'New Password'),
+                          obscureText: true,
+                        ),
+                        const SizedBox(height: 10),
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _resetPassword,
+                                child: const Text('Reset Password'),
+                              ),
+                      ],
                     ),
-              const Divider(), // Divider to separate the sections
-
-              // Section for creating a new office and room
-              const Text('Create New Office and Room',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextField(
-                controller: _officeController,
-                decoration:
-                    const InputDecoration(labelText: 'Create New Office'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _roomController,
-                decoration: const InputDecoration(labelText: 'Create New Room'),
-              ),
-              const SizedBox(height: 10),
-              DropdownButton<String>(
-                value: _selectedUser,
-                hint: const Text('Select a User to Assign Office and Room'),
-                isExpanded: true,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedUser = newValue;
-                  });
-                },
-                items: _users.map((user) {
-                  return DropdownMenuItem<String>(
-                    value: user['id'].toString(),
-                    child: Text(user['username']),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 10),
-              DropdownButton<String>(
-                value: _selectedZone,
-                hint: const Text('Select a Zone'),
-                isExpanded: true,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedZone = newValue;
-                  });
-                },
-                items: _zones.map((zone) {
-                  return DropdownMenuItem<String>(
-                    value: zone,
-                    child: Text(zone),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 10),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _createOfficeAndRoom,
-                      child:
-                          const Text('Create Office, Room, and Assign to User'),
+                    isExpanded: _isExpanded[1],
+                  ),
+                  ExpansionPanel(
+                    headerBuilder: (context, isExpanded) {
+                      return const ListTile(
+                        title: Text('Create Office and Room'),
+                      );
+                    },
+                    body: Column(
+                      children: [
+                        TextField(
+                          controller: _officeController,
+                          decoration: const InputDecoration(
+                              labelText: 'Create New Office'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _roomController,
+                          decoration: const InputDecoration(
+                              labelText: 'Create New Room'),
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButton<String>(
+                          value: _selectedUser,
+                          hint: const Text(
+                              'Select a User to Assign Office and Room'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedUser = newValue;
+                            });
+                          },
+                          items: _users.map((user) {
+                            return DropdownMenuItem<String>(
+                              value: user['id'].toString(),
+                              child: Text(user['username']),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButton<String>(
+                          value: _selectedZone,
+                          hint: const Text('Select a Zone'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedZone = newValue;
+                            });
+                          },
+                          items: _zones.map((zone) {
+                            return DropdownMenuItem<String>(
+                              value: zone,
+                              child: Text(zone),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _createOfficeAndRoom,
+                                child: const Text(
+                                    'Create Office, Room, and Assign to User'),
+                              ),
+                      ],
                     ),
+                    isExpanded: _isExpanded[2],
+                  ),
+                ],
+              ),
             ],
           ),
         ),
