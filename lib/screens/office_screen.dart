@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For secure storage
 import 'package:http/http.dart' as http;
 
+import 'login_screen.dart'; // Import the login screen
 import 'scoreboard_screen.dart'; // Import the ScoreboardScreen
 
 class OfficeScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class OfficeScreen extends StatefulWidget {
 class _OfficeScreenState extends State<OfficeScreen> {
   List<dynamic> _assignedOffices = []; // To store fetched offices
   bool _isLoading = false;
+  final storage = const FlutterSecureStorage(); // Secure storage instance
 
   @override
   void initState() {
@@ -53,6 +56,20 @@ class _OfficeScreenState extends State<OfficeScreen> {
     }
   }
 
+  // Method to handle logout
+  Future<void> _logout() async {
+    // Clear the access token from secure storage
+    await storage.delete(key: 'access_token');
+
+    // Navigate to the login screen and clear the navigation stack
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (Route<dynamic> route) => false, // Remove all routes
+    );
+  }
+
   // Show an error message
   void _showError(String message) {
     ScaffoldMessenger.of(context)
@@ -64,6 +81,32 @@ class _OfficeScreenState extends State<OfficeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Assigned Offices"),
+        actions: [
+          // Popup menu for logout
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle,
+                size: 30), // Face icon for logout
+            onSelected: (String value) {
+              if (value == 'logout') {
+                _logout(); // Log out when 'Logout' is selected
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'logout',
+                height: 40, // Reduce the height of the menu item
+                child: Row(
+                  children: const [
+                    Icon(Icons.logout, color: Colors.black),
+                    SizedBox(width: 10),
+                    Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
+            offset: const Offset(0, 50), // Offset to prevent covering the icon
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
