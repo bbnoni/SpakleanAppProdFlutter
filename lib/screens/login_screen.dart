@@ -131,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               const Text(
-                'Welcome Back!',
+                'Welcome!',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 24,
