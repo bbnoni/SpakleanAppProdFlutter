@@ -27,9 +27,9 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   double? longitude; // To store fetched longitude
 
   final Map<String, List<String>> defectOptions = {
-    'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None'],
-    'WALLS': ['Cobweb', 'Dust', 'Marks', 'Mold', 'Stains', 'None'],
-    'CTP': ['Dust', 'Marks', 'None'],
+    'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None', 'N/A'],
+    'WALLS': ['Cobweb', 'Dust', 'Marks', 'Mold', 'Stains', 'None', 'N/A'],
+    'CTP': ['Dust', 'Marks', 'None', 'N/A'],
     'WINDOWS': [
       'Cobweb',
       'Droppings',
@@ -38,9 +38,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'Water stains',
       'Mud',
       'Stains',
-      'None'
+      'None',
+      'N/A'
     ],
-    'EQUIPMENT': ['Dust', 'Cobweb', 'Stains', 'Fingerprints', 'None'],
+    'EQUIPMENT': ['Dust', 'Cobweb', 'Stains', 'Fingerprints', 'None', 'N/A'],
     'FURNITURE': [
       'Clutter',
       'Cobweb',
@@ -49,9 +50,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'Gums',
       'Ink marks',
       'Stains',
-      'None'
+      'None',
+      'N/A'
     ],
-    'DECOR': ['Dust', 'Cobweb', 'None'],
+    'DECOR': ['Dust', 'Cobweb', 'None', 'N/A'],
     'CARPET': [
       'Clutter',
       'Droppings',
@@ -64,7 +66,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'Spills',
       'Stains',
       'Trash',
-      'None'
+      'None',
+      'N/A'
     ],
     'FLOOR': [
       'Clutter',
@@ -82,7 +85,28 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'Shoe marks',
       'Spills',
       'Trash',
-      'None'
+      'None',
+      'N/A'
+    ],
+    'YARD': [
+      'Trash',
+      'Weeds',
+      'Cobweb',
+      'Oil stains',
+      'Debris',
+      'Clutter',
+      'None',
+      'N/A'
+    ],
+    'SANITARY WARE': [
+      'Stains',
+      'Dust',
+      'Microbes',
+      'Mold',
+      'Odor',
+      'Spills',
+      'None',
+      'N/A'
     ]
   };
 
@@ -100,6 +124,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'DECOR': {},
       'FLOOR': {},
       'CARPET': {},
+      'YARD': {},
+      'SANITARY WARE': {},
     };
     // Fetch location on screen load
     _fetchLocation();
@@ -111,8 +137,9 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     int defectOptionsSelected = 0;
 
     selections.forEach((key, value) {
-      totalOptions += defectOptions[key]!.length - 1; // Exclude "None" option
-      if (!value.contains('None')) {
+      totalOptions +=
+          defectOptions[key]!.length - 2; // Exclude "None" and "N/A"
+      if (!value.contains('None') && !value.contains('N/A')) {
         defectOptionsSelected +=
             value.intersection(defectOptions[key]!.toSet()).length;
       }
@@ -258,6 +285,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               buildCategory('DECOR', defectOptions['DECOR']!),
               buildCategory('FLOOR', defectOptions['FLOOR']!),
               buildCategory('CARPET', defectOptions['CARPET']!),
+              buildCategory('YARD', defectOptions['YARD']!),
+              buildCategory('SANITARY WARE', defectOptions['SANITARY WARE']!),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
@@ -309,11 +338,12 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
                   setState(() {
                     if (selected) {
                       selections[category]?.add(option);
-                      if (option == 'None') {
+                      if (option == 'None' || option == 'N/A') {
                         selections[category]!.clear();
-                        selections[category]!.add('None');
+                        selections[category]!.add(option);
                       } else {
                         selections[category]?.remove('None');
+                        selections[category]?.remove('N/A');
                       }
                     } else {
                       selections[category]?.remove(option);

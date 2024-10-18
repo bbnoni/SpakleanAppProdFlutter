@@ -28,6 +28,17 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to provide location-based features in the app.</string>
+
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>We need your location to provide continuous location tracking for our app.</string>
+    
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need your location to show where the submission happened.</string>
+
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app needs access to location when open and in the background.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -45,14 +56,5 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location to provide location-based features in the app.</string>
-
-    <key>NSLocationAlwaysUsageDescription</key>
-    <string>We need your location to provide continuous location tracking for our app.</string>
-    
-	<key>NSLocationWhenInUseUsageDescription</key>
-    <string>We need your location to show where the submission happened.</string>
-
 </dict>
 </plist>
