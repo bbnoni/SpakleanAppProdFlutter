@@ -5,26 +5,27 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 class CheckpointScreen extends StatefulWidget {
-  final String roomId; // Room ID passed from ZoneDetailScreen
-  final String roomName; // Room Name passed from ZoneDetailScreen
-  final String userId; // User ID for task submission
+  final String roomId;
+  final String roomName;
+  final String userId;
+  final String zoneName; // Add zoneName as a parameter
 
   const CheckpointScreen(
       {super.key,
       required this.roomId,
       required this.roomName,
-      required this.userId});
+      required this.userId,
+      required this.zoneName}); // Make it required
 
   @override
   _CheckpointScreenState createState() => _CheckpointScreenState();
 }
 
 class _CheckpointScreenState extends State<CheckpointScreen> {
-  Map<String, Set<String>> selections =
-      {}; // Stores selected issues per category
-  DateTime? _submissionTime; // Stores the time of submission
-  double? latitude; // To store fetched latitude
-  double? longitude; // To store fetched longitude
+  Map<String, Set<String>> selections = {};
+  DateTime? _submissionTime;
+  double? latitude;
+  double? longitude;
 
   final Map<String, List<String>> defectOptions = {
     'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None', 'N/A'],
@@ -107,50 +108,35 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       'Spills',
       'None',
       'N/A'
-    ]
+    ],
   };
 
   @override
   void initState() {
     super.initState();
-    // Initialize selections for categories
-    selections = {
-      'CEILING': {},
-      'WALLS': {},
-      'CTP': {},
-      'WINDOWS': {},
-      'EQUIPMENT': {},
-      'FURNITURE': {},
-      'DECOR': {},
-      'FLOOR': {},
-      'CARPET': {},
-      'YARD': {},
-      'SANITARY WARE': {},
-    };
-    // Fetch location on screen load
+    selections = defectOptions.map((key, value) => MapEntry(key, <String>{}));
     _fetchLocation();
   }
 
-  // Function to calculate the percentage score of the checklist
-  double calculateScore() {
-    int totalOptions = 0;
-    int defectOptionsSelected = 0;
+  Map<String, double> _calculateAreaScores() {
+    Map<String, double> areaScores = {};
 
-    selections.forEach((key, value) {
-      totalOptions +=
-          defectOptions[key]!.length - 2; // Exclude "None" and "N/A"
-      if (!value.contains('None') && !value.contains('N/A')) {
-        defectOptionsSelected +=
-            value.intersection(defectOptions[key]!.toSet()).length;
+    selections.forEach((area, defectsSelected) {
+      int totalOptions = defectOptions[area]!.length - 2;
+      if (defectsSelected.contains('None')) {
+        areaScores[area] = 100.0;
+      } else if (defectsSelected.contains('N/A')) {
+        return;
+      } else {
+        int defectOptionsSelected = defectsSelected.length;
+        int nonDefectSelections = totalOptions - defectOptionsSelected;
+        areaScores[area] = (nonDefectSelections / totalOptions) * 100;
       }
     });
 
-    // Calculate score based on non-defect options
-    int nonDefectSelections = totalOptions - defectOptionsSelected;
-    return totalOptions == 0 ? 0 : (nonDefectSelections / totalOptions) * 100;
+    return areaScores;
   }
 
-  // Function to fetch location from IP
   Future<void> _fetchLocation() async {
     try {
       final response = await http.get(Uri.parse('https://ipinfo.io/json'));
@@ -162,19 +148,13 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
             latitude = double.tryParse(loc[0]);
             longitude = double.tryParse(loc[1]);
           });
-          print("Location fetched: Latitude $latitude, Longitude $longitude");
-        } else {
-          print("Failed to get location data.");
         }
-      } else {
-        print("Error: ${response.statusCode}");
       }
     } catch (e) {
       print("Exception while fetching location: $e");
     }
   }
 
-  // Function to check if at least one item is selected in every category
   bool _isChecklistComplete() {
     for (var category in selections.keys) {
       if (selections[category]!.isEmpty) {
@@ -184,28 +164,28 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     return true;
   }
 
-  // Function to submit task data to backend
   Future<void> _submitDataToBackend() async {
-    // Check if all categories have at least one selected item
     if (!_isChecklistComplete()) {
-      // Show a SnackBar if the checklist is incomplete
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one item from each category.'),
-        ),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content:
+              Text('Please select at least one item from each category.')));
       return;
     }
 
-    _submissionTime = DateTime.now(); // Capture submission time
+    _submissionTime = DateTime.now();
+
+    // Calculate area scores
+    final areaScores = _calculateAreaScores();
 
     // Prepare the data to be sent
     final data = {
-      "task_type": "Inspection", // The task type you want to save
+      "task_type": "Inspection",
       "latitude": latitude,
       "longitude": longitude,
-      "user_id": widget.userId, // Pass userId
-      "room_id": widget.roomId, // Pass roomId
+      "user_id": widget.userId,
+      "room_id": widget.roomId,
+      "zone_name": widget.zoneName, // Include the zone name in the payload
+      "area_scores": areaScores, // Submit calculated area scores
     };
 
     try {
@@ -216,9 +196,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       );
 
       if (response.statusCode == 201) {
-        print("Task submitted successfully.");
-        // Show submission summary in a dialog
-        _showSubmissionSummary();
+        _showSubmissionSummary(areaScores);
       } else {
         print("Failed to submit task: ${response.body}");
       }
@@ -227,11 +205,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     }
   }
 
-  // Function to show a summary dialog after submission
-  void _showSubmissionSummary() {
-    // Calculate score
-    double score = calculateScore();
-
+  void _showSubmissionSummary(Map<String, double> areaScores) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -239,16 +213,19 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
           title: const Text('Submission Summary'),
           content: Text(
             'Room: ${widget.roomName}\n'
-            'Submission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\n'
-            'Score: ${score.toStringAsFixed(2)}%\n'
-            'Location: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}',
+                    'Submission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\n'
+                    'Location: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}\n'
+                    'Area Scores:\n' +
+                areaScores.entries
+                    .map((entry) =>
+                        '${entry.key}: ${entry.value.toStringAsFixed(2)}%')
+                    .join('\n'),
           ),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                Navigator.of(context)
-                    .pop(); // Navigate back to the previous screen
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: const Text('OK'),
             ),
@@ -262,16 +239,13 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Checkpoint: ${widget.roomName}"), // Display room name
+        title: Text("Checkpoint: ${widget.roomName}"),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.pop(context)),
       ),
       body: Container(
-        color: Colors.lightBlue[50], // Light blue background
+        color: Colors.lightBlue[50],
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -289,17 +263,13 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               buildCategory('SANITARY WARE', defectOptions['SANITARY WARE']!),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () async {
-                  await _submitDataToBackend();
-                },
+                onPressed: _submitDataToBackend,
                 style: ElevatedButton.styleFrom(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 50, vertical: 15),
+                    backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20))),
                 child: const Text('Submit',
                     style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
@@ -310,21 +280,18 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     );
   }
 
-  // Helper to build checklist categories
   Widget buildCategory(String category, List<String> options) {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-          vertical: 16.0), // Adds padding to each category
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             category,
             style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87),
           ),
           const SizedBox(height: 10),
           Wrap(
@@ -353,11 +320,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 10), // Space between filter chips and divider
-          const Divider(
-            thickness: 2.0, // Thicker divider for better visual separation
-            color: Colors.grey, // Change divider color
-          ),
+          const SizedBox(height: 10),
+          const Divider(thickness: 2.0, color: Colors.grey),
         ],
       ),
     );

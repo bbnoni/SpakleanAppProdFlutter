@@ -23,11 +23,34 @@ class ZoneDetailScreen extends StatefulWidget {
 class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   List<dynamic> _rooms = []; // To store the fetched rooms
   bool _isLoading = false;
+  double? _zoneScore; // Store zone score
 
   @override
   void initState() {
     super.initState();
     _fetchRooms(); // Fetch rooms when the screen loads
+    _fetchZoneScore(); // Fetch zone score when the screen loads
+  }
+
+  // Fetch the zone score and store it in the state
+  Future<void> _fetchZoneScore() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://spaklean-app-prod.onrender.com/api/zones/${widget.zone}/score'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          _zoneScore = data['zone_score'];
+        });
+      } else {
+        print('Failed to load zone score');
+      }
+    } catch (e) {
+      print('Error fetching zone score: $e');
+    }
   }
 
   // Fetch rooms for the specific zone, userId, and officeId
@@ -103,6 +126,19 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       ),
       body: Column(
         children: [
+          // Display zone score if available
+          if (_zoneScore != null)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Zone Score: ${_zoneScore!.toStringAsFixed(2)}%',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -159,11 +195,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => CheckpointScreen(
-                                        roomId: _rooms[index]['id']
-                                            .toString(), // Pass room ID
-                                        roomName: _rooms[index]
-                                            ['name'], // Pass room name
-                                        userId: widget.userId, // Pass userId
+                                        roomId: _rooms[index]['id'].toString(),
+                                        roomName: _rooms[index]['name'],
+                                        userId: widget.userId,
+                                        zoneName: widget.zone,
                                       ),
                                     ),
                                   );
@@ -174,35 +209,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                         },
                       ),
           ),
-          // Padding(
-          //   padding: const EdgeInsets.all(16.0),
-          //   child: ElevatedButton(
-          //     onPressed: () {
-          //       // Navigate back to the FacilityInspectionScreen
-          //       Navigator.pushReplacement(
-          //         context,
-          //         MaterialPageRoute(
-          //           builder: (context) => FacilityInspectionScreen(
-          //             userId: widget.userId, // Pass the userId back
-          //             officeId: widget.officeId, // Pass the officeId back
-          //           ),
-          //         ),
-          //       );
-          //     },
-          //     style: ElevatedButton.styleFrom(
-          //       padding:
-          //           const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-          //       backgroundColor: Colors.blue, // Blue color for the button
-          //       shape: RoundedRectangleBorder(
-          //         borderRadius: BorderRadius.circular(20),
-          //       ),
-          //     ),
-          //     child: const Text(
-          //       'Back to Facility Inspection',
-          //       style: TextStyle(fontSize: 18, color: Colors.white),
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
