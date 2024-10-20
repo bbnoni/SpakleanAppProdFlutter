@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:table_calendar/table_calendar.dart';
 
 class ReportScreen extends StatefulWidget {
   final String userId;
@@ -14,6 +15,7 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   List<dynamic> _tasks = [];
   bool _isLoading = false;
+  DateTime _selectedDate = DateTime.now(); // The selected date
 
   @override
   void initState() {
@@ -21,6 +23,7 @@ class _ReportScreenState extends State<ReportScreen> {
     _fetchTasks();
   }
 
+  // Fetch all tasks for the user
   Future<void> _fetchTasks() async {
     setState(() {
       _isLoading = true;
@@ -35,41 +38,8 @@ class _ReportScreenState extends State<ReportScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final tasks = data['tasks'];
-
-        // Fetch zone score and facility score dynamically for each task
-        for (var task in tasks) {
-          if (task['zone_score'] == null || task['facility_score'] == null) {
-            final zoneName = task['zone_name'];
-
-            if (zoneName != null && zoneName.isNotEmpty) {
-              // Encode the URL to handle special characters (e.g., spaces)
-              final zoneScoreUrl = Uri.encodeFull(
-                  'https://spaklean-app-prod.onrender.com/api/zones/$zoneName/score');
-              final zoneScoreResponse = await http.get(Uri.parse(zoneScoreUrl));
-
-              if (zoneScoreResponse.statusCode == 200) {
-                final zoneScoreData = jsonDecode(zoneScoreResponse.body);
-                task['zone_score'] = zoneScoreData['zone_score'];
-              }
-            }
-
-            // Fetch facility score
-            final facilityScoreResponse = await http.get(
-              Uri.parse(
-                  'https://spaklean-app-prod.onrender.com/api/facility/score'),
-            );
-
-            if (facilityScoreResponse.statusCode == 200) {
-              final facilityScoreData = jsonDecode(facilityScoreResponse.body);
-              task['facility_score'] =
-                  facilityScoreData['total_facility_score'];
-            }
-          }
-        }
-
         setState(() {
-          _tasks = tasks;
+          _tasks = data['tasks'];
         });
       } else {
         _showError('Failed to load tasks');
@@ -83,18 +53,69 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
+  // Show error
   void _showError(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
+  // Helper method to get the color for each zone
+  Color _getZoneColor(String zoneName) {
+    switch (zoneName) {
+      case 'Low Traffic Areas (Yellow Zone)':
+        return Colors.yellow[700]!;
+      case 'Heavy Traffic Areas (Orange Zone)':
+        return Colors.orange[700]!;
+      case 'Food Service Areas (Green Zone)':
+        return Colors.green[700]!;
+      case 'High Microbial Areas (Red Zone)':
+        return Colors.red[700]!;
+      case 'Outdoors & Exteriors (Black Zone)':
+        return Colors.black;
+      default:
+        return Colors.grey; // Default color if no match
+    }
+  }
+
+  // Group tasks by zones
+  Map<String, List<dynamic>> _groupTasksByZone(List<dynamic> tasks) {
+    final Map<String, List<dynamic>> groupedTasks = {};
+    for (var task in tasks) {
+      final zoneName = task['zone_name'] ?? 'Unknown Zone';
+      if (groupedTasks.containsKey(zoneName)) {
+        groupedTasks[zoneName]?.add(task);
+      } else {
+        groupedTasks[zoneName] = [task];
+      }
+    }
+    return groupedTasks;
+  }
+
+  // Filter tasks by selected date
+  List<dynamic> _getTasksForSelectedDate() {
+    final selectedDateFormatted =
+        _selectedDate.toIso8601String().substring(0, 10);
+    return _tasks.where((task) {
+      final taskDate = task['date_submitted'].substring(0, 10);
+      return taskDate == selectedDateFormatted;
+    }).toList();
+  }
+
+  // Build each task card
   Widget _buildTaskCard(Map<String, dynamic> task) {
     final zoneName = task['zone_name'] ?? 'N/A';
-    final zoneScore = task['zone_score'] != null
-        ? '${double.tryParse(task['zone_score'].toString())?.toStringAsFixed(2) ?? 'N/A'}%'
+
+    // Safely parse zone_score and facility_score to double if possible
+    final zoneScoreValue =
+        double.tryParse(task['zone_score']?.toString() ?? '');
+    final zoneScore = zoneScoreValue != null
+        ? '${zoneScoreValue.toStringAsFixed(2)}%'
         : 'N/A';
-    final facilityScore = task['facility_score'] != null
-        ? '${double.tryParse(task['facility_score'].toString())?.toStringAsFixed(2) ?? 'N/A'}%'
+
+    final facilityScoreValue =
+        double.tryParse(task['facility_score']?.toString() ?? '');
+    final facilityScore = facilityScoreValue != null
+        ? '${facilityScoreValue.toStringAsFixed(2)}%'
         : 'N/A';
 
     return Card(
@@ -118,17 +139,14 @@ class _ReportScreenState extends State<ReportScreen> {
             Text('Date: ${task['date_submitted']}'),
             Text('Room Score: ${task['room_score']?.toStringAsFixed(2)}%'),
             Text('Zone: $zoneName'),
-            Text(
-                'Zone Score: $zoneScore'), // Display zone score with 2 decimal places
-            Text(
-                'Facility Score: $facilityScore'), // Display facility score with 2 decimal places
+            Text('Zone Score: $zoneScore'), // Display zone score
+            Text('Facility Score: $facilityScore'), // Display facility score
             Text('Latitude: ${task['latitude']}'),
             Text('Longitude: ${task['longitude']}'),
             const SizedBox(height: 8.0),
             Text('Area Scores:'),
             ...task['area_scores'].entries.map((entry) {
-              return Text(
-                  '${entry.key}: ${(entry.value as double).toStringAsFixed(2)}%');
+              return Text('${entry.key}: ${entry.value.toStringAsFixed(2)}%');
             }).toList(),
           ],
         ),
@@ -138,20 +156,60 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter tasks for the selected date
+    final tasksForSelectedDate = _getTasksForSelectedDate();
+    // Group tasks by zone
+    final groupedTasksByZone = _groupTasksByZone(tasksForSelectedDate);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inspection Reports'),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _tasks.isEmpty
-              ? const Center(child: Text('No tasks found'))
-              : ListView.builder(
-                  itemCount: _tasks.length,
-                  itemBuilder: (context, index) {
-                    return _buildTaskCard(_tasks[index]);
-                  },
-                ),
+      body: Column(
+        children: [
+          // Calendar widget to select date
+          TableCalendar(
+            firstDay: DateTime.utc(2020, 1, 1),
+            lastDay: DateTime.utc(2030, 12, 31),
+            focusedDay: _selectedDate,
+            selectedDayPredicate: (day) {
+              return isSameDay(_selectedDate, day);
+            },
+            onDaySelected: (selectedDay, focusedDay) {
+              setState(() {
+                _selectedDate = selectedDay; // Update selected date
+              });
+            },
+            calendarFormat: CalendarFormat.month,
+          ),
+
+          // Loading indicator
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
+
+          // Show tasks for the selected date
+          if (!_isLoading && tasksForSelectedDate.isEmpty)
+            const Center(child: Text('No tasks found for this date')),
+
+          if (!_isLoading && tasksForSelectedDate.isNotEmpty)
+            Expanded(
+              child: ListView(
+                children: groupedTasksByZone.keys.map((zone) {
+                  // Get color for each zone
+                  final zoneColor = _getZoneColor(zone);
+                  return ExpansionTile(
+                    title: Text(
+                      zone,
+                      style: TextStyle(color: zoneColor),
+                    ),
+                    children: groupedTasksByZone[zone]!
+                        .map((task) => _buildTaskCard(task))
+                        .toList(),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
