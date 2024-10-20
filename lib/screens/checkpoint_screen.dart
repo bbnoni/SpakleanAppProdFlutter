@@ -111,6 +111,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     ],
   };
 
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -155,20 +157,25 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     }
   }
 
-  bool _isChecklistComplete() {
+  String? _getIncompleteCategory() {
     for (var category in selections.keys) {
       if (selections[category]!.isEmpty) {
-        return false;
+        return category;
       }
     }
-    return true;
+    return null;
   }
 
   Future<void> _submitDataToBackend() async {
-    if (!_isChecklistComplete()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content:
-              Text('Please select at least one item from each category.')));
+    final incompleteCategory = _getIncompleteCategory();
+
+    if (incompleteCategory != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please complete the $incompleteCategory category.'),
+      ));
+
+      // Scroll to the incomplete category
+      _scrollToCategory(incompleteCategory);
       return;
     }
 
@@ -176,6 +183,24 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
 
     // Calculate area scores
     final areaScores = _calculateAreaScores();
+
+    // Fetch zone score
+    double? zoneScore;
+    try {
+      final zoneScoreUrl = Uri.encodeFull(
+        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score',
+      );
+      final zoneScoreResponse = await http.get(Uri.parse(zoneScoreUrl));
+
+      if (zoneScoreResponse.statusCode == 200) {
+        final zoneScoreData = jsonDecode(zoneScoreResponse.body);
+        zoneScore = double.tryParse(zoneScoreData['zone_score'].toString());
+      } else {
+        print("Failed to fetch zone score: ${zoneScoreResponse.body}");
+      }
+    } catch (e) {
+      print("Error fetching zone score: $e");
+    }
 
     // Prepare the data to be sent
     final data = {
@@ -186,6 +211,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       "room_id": widget.roomId,
       "zone_name": widget.zoneName, // Include the zone name in the payload
       "area_scores": areaScores, // Submit calculated area scores
+      "zone_score": zoneScore, // Include the fetched zone score (if available)
     };
 
     try {
@@ -235,6 +261,17 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     );
   }
 
+  void _scrollToCategory(String category) {
+    final targetIndex = defectOptions.keys.toList().indexOf(category);
+    final targetOffset =
+        targetIndex * 250.0; // Approximate offset for each category
+    _scrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -247,6 +284,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       body: Container(
         color: Colors.lightBlue[50],
         child: SingleChildScrollView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [

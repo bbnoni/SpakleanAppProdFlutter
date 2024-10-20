@@ -35,15 +35,18 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   // Fetch the zone score and store it in the state
   Future<void> _fetchZoneScore() async {
     try {
+      // Properly encode the zone name before sending the request
+      final encodedZone = Uri.encodeComponent(widget.zone);
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/zones/${widget.zone}/score'),
+            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score'),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _zoneScore = data['zone_score'];
+          // Check if the zone score is "N/A" and handle it appropriately
+          _zoneScore = data['zone_score'] == "N/A" ? null : data['zone_score'];
         });
       } else {
         print('Failed to load zone score');
@@ -60,9 +63,11 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     });
 
     try {
+      // Properly encode the zone name before sending the request
+      final encodedZone = Uri.encodeComponent(widget.zone);
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/offices/${widget.officeId}/rooms/${widget.zone}'),
+            'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/offices/${widget.officeId}/rooms/$encodedZone'),
       );
 
       if (response.statusCode == 200) {
@@ -126,13 +131,25 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       ),
       body: Column(
         children: [
-          // Display zone score if available
+          // Display zone score if available or "N/A" if null
           if (_zoneScore != null)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
                 'Zone Score: ${_zoneScore!.toStringAsFixed(2)}%',
                 style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: const Text(
+                'Zone Score: N/A',
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.black,
