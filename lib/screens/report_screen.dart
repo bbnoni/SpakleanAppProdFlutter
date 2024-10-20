@@ -14,13 +14,11 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   List<dynamic> _tasks = [];
   bool _isLoading = false;
-  double? facilityScore;
 
   @override
   void initState() {
     super.initState();
     _fetchTasks();
-    _fetchFacilityScore();
   }
 
   Future<void> _fetchTasks() async {
@@ -31,13 +29,47 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/tasks'),
+          'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/tasks',
+        ),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        final tasks = data['tasks'];
+
+        // Fetch zone score and facility score dynamically for each task
+        for (var task in tasks) {
+          if (task['zone_score'] == null || task['facility_score'] == null) {
+            final zoneName = task['zone_name'];
+
+            if (zoneName != null && zoneName.isNotEmpty) {
+              // Encode the URL to handle special characters (e.g., spaces)
+              final zoneScoreUrl = Uri.encodeFull(
+                  'https://spaklean-app-prod.onrender.com/api/zones/$zoneName/score');
+              final zoneScoreResponse = await http.get(Uri.parse(zoneScoreUrl));
+
+              if (zoneScoreResponse.statusCode == 200) {
+                final zoneScoreData = jsonDecode(zoneScoreResponse.body);
+                task['zone_score'] = zoneScoreData['zone_score'];
+              }
+            }
+
+            // Fetch facility score
+            final facilityScoreResponse = await http.get(
+              Uri.parse(
+                  'https://spaklean-app-prod.onrender.com/api/facility/score'),
+            );
+
+            if (facilityScoreResponse.statusCode == 200) {
+              final facilityScoreData = jsonDecode(facilityScoreResponse.body);
+              task['facility_score'] =
+                  facilityScoreData['total_facility_score'];
+            }
+          }
+        }
+
         setState(() {
-          _tasks = data['tasks'];
+          _tasks = tasks;
         });
       } else {
         _showError('Failed to load tasks');
@@ -51,42 +83,57 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  Future<void> _fetchFacilityScore() async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://spaklean-app-prod.onrender.com/api/facility/score'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          facilityScore = data['total_facility_score'];
-        });
-      } else {
-        _showError('Failed to load facility score');
-      }
-    } catch (e) {
-      _showError('An error occurred while fetching facility score');
-    }
-  }
-
-  Future<double> _fetchZoneScore(String zoneName) async {
-    final response = await http.get(
-      Uri.parse(
-          'https://spaklean-app-prod.onrender.com/api/zones/$zoneName/score'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['zone_score'];
-    } else {
-      throw Exception('Failed to load zone score');
-    }
-  }
-
   void _showError(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Widget _buildTaskCard(Map<String, dynamic> task) {
+    final zoneName = task['zone_name'] ?? 'N/A';
+    final zoneScore = task['zone_score'] != null
+        ? '${double.tryParse(task['zone_score'].toString())?.toStringAsFixed(2) ?? 'N/A'}%'
+        : 'N/A';
+    final facilityScore = task['facility_score'] != null
+        ? '${double.tryParse(task['facility_score'].toString())?.toStringAsFixed(2) ?? 'N/A'}%'
+        : 'N/A';
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Task Type: ${task['task_type']}',
+              style: const TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            Text('Date: ${task['date_submitted']}'),
+            Text('Room Score: ${task['room_score']?.toStringAsFixed(2)}%'),
+            Text('Zone: $zoneName'),
+            Text(
+                'Zone Score: $zoneScore'), // Display zone score with 2 decimal places
+            Text(
+                'Facility Score: $facilityScore'), // Display facility score with 2 decimal places
+            Text('Latitude: ${task['latitude']}'),
+            Text('Longitude: ${task['longitude']}'),
+            const SizedBox(height: 8.0),
+            Text('Area Scores:'),
+            ...task['area_scores'].entries.map((entry) {
+              return Text(
+                  '${entry.key}: ${(entry.value as double).toStringAsFixed(2)}%');
+            }).toList(),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -102,77 +149,7 @@ class _ReportScreenState extends State<ReportScreen> {
               : ListView.builder(
                   itemCount: _tasks.length,
                   itemBuilder: (context, index) {
-                    final task = _tasks[index];
-                    final zoneName = task['zone_name'] ?? 'N/A';
-
-                    return FutureBuilder<double>(
-                      future: zoneName != 'N/A'
-                          ? _fetchZoneScore(zoneName)
-                          : Future.value(
-                              0.0), // Return 0.0 when zoneName is 'N/A'
-                      builder: (context, snapshot) {
-                        final zoneScore =
-                            snapshot.data?.toStringAsFixed(2) ?? 'N/A';
-
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0, vertical: 8.0),
-                          child: Container(
-                            padding: const EdgeInsets.all(16.0),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(12.0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.3),
-                                  blurRadius: 6.0,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Task Type: ${task['task_type']}',
-                                  style: const TextStyle(
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text('Date: ${task['date_submitted']}'),
-                                Text(
-                                    'Room Score: ${task['room_score']?.toStringAsFixed(2)}%'),
-                                Text('Zone: $zoneName'),
-                                Text('Latitude: ${task['latitude']}'),
-                                Text('Longitude: ${task['longitude']}'),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Zone Score: $zoneScore%',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                if (facilityScore != null) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Total Facility Score: ${facilityScore!.toStringAsFixed(2)}%',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                                const SizedBox(height: 8),
-                                Text('Area Scores:'),
-                                for (var entry
-                                    in (task['area_scores'] as Map).entries)
-                                  Text(
-                                      '${entry.key}: ${(entry.value as double).toStringAsFixed(2)}%'),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
+                    return _buildTaskCard(_tasks[index]);
                   },
                 ),
     );
