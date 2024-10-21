@@ -23,7 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     final email = _emailController.text
         .trim()
-        .toLowerCase(); // Convert email to lowercase
+        .toLowerCase(); // Convert email to lowercase to remove case sensitivity
     final password = _passwordController.text;
 
     // Check if fields are empty
@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'username': email, // Send lowercased email
+          'username': email, // Send lowercased email to server
           'password': password,
         }),
       );
