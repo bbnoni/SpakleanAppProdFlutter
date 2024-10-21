@@ -44,13 +44,17 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
+          // Log the fetched data for debugging
+          print('Fetched Facility Score Data: $data');
+
           // Set facility score or N/A if no score is available
           _facilityScore = data['total_facility_score'] == null
               ? null
               : data['total_facility_score'];
         });
       } else {
-        print('Failed to load facility score');
+        print(
+            'Failed to load facility score with status: ${response.statusCode}');
       }
     } catch (e) {
       print('Error fetching facility score: $e');

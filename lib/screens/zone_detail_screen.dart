@@ -220,6 +220,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                                         roomName: _rooms[index]['name'],
                                         userId: widget.userId,
                                         zoneName: widget.zone,
+                                        officeId: widget.officeId,
                                       ),
                                     ),
                                   );

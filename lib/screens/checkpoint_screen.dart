@@ -8,14 +8,17 @@ class CheckpointScreen extends StatefulWidget {
   final String roomId;
   final String roomName;
   final String userId;
-  final String zoneName; // Add zoneName as a parameter
+  final String zoneName;
+  final String officeId; // Add officeId as a parameter
 
-  const CheckpointScreen(
-      {super.key,
-      required this.roomId,
-      required this.roomName,
-      required this.userId,
-      required this.zoneName}); // Make it required
+  const CheckpointScreen({
+    super.key,
+    required this.roomId,
+    required this.roomName,
+    required this.userId,
+    required this.zoneName,
+    required this.officeId, // Make it required
+  });
 
   @override
   _CheckpointScreenState createState() => _CheckpointScreenState();
@@ -184,22 +187,42 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     // Calculate area scores
     final areaScores = _calculateAreaScores();
 
-    // Fetch zone score
+    // Fetch zone score and facility score
     double? zoneScore;
+    double? facilityScore;
+
     try {
+      // Properly encode the zone name and append office ID
       final zoneScoreUrl = Uri.encodeFull(
-        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score',
+        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score?office_id=${widget.officeId}',
       );
       final zoneScoreResponse = await http.get(Uri.parse(zoneScoreUrl));
 
       if (zoneScoreResponse.statusCode == 200) {
         final zoneScoreData = jsonDecode(zoneScoreResponse.body);
-        zoneScore = double.tryParse(zoneScoreData['zone_score'].toString());
-      } else {
-        print("Failed to fetch zone score: ${zoneScoreResponse.body}");
+        if (zoneScoreData['zone_score'] != null &&
+            zoneScoreData['zone_score'] != "N/A") {
+          zoneScore = double.tryParse(zoneScoreData['zone_score'].toString());
+        } else {
+          zoneScore = null; // If no score, set to null
+        }
+      }
+
+      // Fetch facility score
+      final facilityScoreUrl = Uri.encodeFull(
+        'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}',
+      );
+      final facilityScoreResponse = await http.get(Uri.parse(facilityScoreUrl));
+
+      if (facilityScoreResponse.statusCode == 200) {
+        final facilityScoreData = jsonDecode(facilityScoreResponse.body);
+        if (facilityScoreData['total_facility_score'] != null) {
+          facilityScore = double.tryParse(
+              facilityScoreData['total_facility_score'].toString());
+        }
       }
     } catch (e) {
-      print("Error fetching zone score: $e");
+      print("Error fetching zone or facility score: $e");
     }
 
     // Prepare the data to be sent
@@ -211,8 +234,13 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       "room_id": widget.roomId,
       "zone_name": widget.zoneName, // Include the zone name in the payload
       "area_scores": areaScores, // Submit calculated area scores
-      "zone_score": zoneScore, // Include the fetched zone score (if available)
+      "zone_score": zoneScore, // Include the fetched zone score (or null)
+      "facility_score":
+          facilityScore, // Include the fetched facility score (or null)
     };
+
+    // Print the data to check
+    print("Submitting data: $data");
 
     try {
       final response = await http.post(

@@ -40,12 +40,15 @@ class _ReportScreenState extends State<ReportScreen> {
         final data = jsonDecode(response.body);
         setState(() {
           _tasks = data['tasks'];
+          // Log the fetched tasks for debugging
+          print("Fetched Tasks: $_tasks");
         });
       } else {
         _showError('Failed to load tasks');
       }
     } catch (e) {
       _showError('An error occurred while fetching tasks');
+      print("Error fetching tasks: $e");
     } finally {
       setState(() {
         _isLoading = false;
@@ -117,6 +120,9 @@ class _ReportScreenState extends State<ReportScreen> {
     final facilityScore = facilityScoreValue != null
         ? '${facilityScoreValue.toStringAsFixed(2)}%'
         : 'N/A';
+
+    // Log facility score for debugging
+    print("Facility Score for task: $facilityScore");
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
