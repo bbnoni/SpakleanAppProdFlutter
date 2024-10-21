@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'custodian_records_screen.dart'; // Import Custodian Records screen
+import 'custodian_attendance_screen.dart'; // Import Custodian Attendance screen
 import 'facility_inspection_screen.dart';
 
 class ScoreboardScreen extends StatelessWidget {
@@ -65,9 +65,10 @@ class ScoreboardScreen extends StatelessWidget {
               'Custodian Records',
               Icons.person,
               Colors.purple,
-              CustodianRecordsScreen(
-                userId: userId, // Pass userId to Custodian Records Screen
-                officeId: officeId, // Pass officeId to Custodian Records Screen
+              CustodianAttendanceScreen(
+                userId: userId, // Pass userId to Custodian Attendance Screen
+                officeId:
+                    officeId, // Pass officeId to Custodian Attendance Screen
               ),
             ),
             _buildGridTile(
