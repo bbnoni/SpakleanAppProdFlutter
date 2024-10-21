@@ -37,9 +37,11 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     try {
       // Properly encode the zone name before sending the request
       final encodedZone = Uri.encodeComponent(widget.zone);
+
+      // Append officeId as a query parameter to make the zone score unique to each office
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score'),
+            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}'),
       );
 
       if (response.statusCode == 200) {
@@ -65,6 +67,8 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     try {
       // Properly encode the zone name before sending the request
       final encodedZone = Uri.encodeComponent(widget.zone);
+
+      // Append officeId as a query parameter to fetch rooms specific to that office
       final response = await http.get(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/offices/${widget.officeId}/rooms/$encodedZone'),

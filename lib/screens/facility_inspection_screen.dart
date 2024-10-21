@@ -20,30 +20,44 @@ class FacilityInspectionScreen extends StatefulWidget {
 
 class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
   double? _facilityScore; // Store facility score
+  bool _isLoading = false; // Loading indicator for fetching the score
 
   @override
   void initState() {
     super.initState();
-    _fetchFacilityScore(); // Fetch facility score when screen loads
+    _fetchFacilityScore(); // Fetch facility score when the screen loads
   }
 
-  // Fetch facility score from the backend
+  // Fetch facility score for the selected office
   Future<void> _fetchFacilityScore() async {
+    setState(() {
+      _isLoading = true; // Show loading indicator
+    });
+
     try {
+      // Add the officeId as a query parameter to fetch the score specific to that office
       final response = await http.get(
-        Uri.parse('https://spaklean-app-prod.onrender.com/api/facility/score'),
+        Uri.parse(
+            'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}'),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _facilityScore = data['total_facility_score'];
+          // Set facility score or N/A if no score is available
+          _facilityScore = data['total_facility_score'] == null
+              ? null
+              : data['total_facility_score'];
         });
       } else {
         print('Failed to load facility score');
       }
     } catch (e) {
       print('Error fetching facility score: $e');
+    } finally {
+      setState(() {
+        _isLoading = false; // Hide loading indicator
+      });
     }
   }
 
@@ -57,12 +71,17 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: <Widget>[
-            // Display facility score at the top if available
-            if (_facilityScore != null)
+            // Display loading indicator while fetching the score
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else
+              // Display facility score at the top if available, otherwise show N/A
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
-                  'Total Facility Score: ${_facilityScore!.toStringAsFixed(2)}%',
+                  _facilityScore != null
+                      ? 'Total Facility Score: ${_facilityScore!.toStringAsFixed(2)}%'
+                      : 'Total Facility Score: N/A',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -144,7 +163,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
             builder: (context) => ZoneDetailScreen(
               zone: zone,
               userId: widget.userId,
-              officeId: widget.officeId,
+              officeId: widget.officeId, // Pass officeId to ZoneDetailScreen
             ),
           ),
         );
