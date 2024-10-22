@@ -253,7 +253,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
     return ListView.separated(
       shrinkWrap: true,
       itemCount: _attendanceHistory.length,
-      separatorBuilder: (context, index) => Divider(),
+      separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
         final record = _attendanceHistory[index];
         return ListTile(
@@ -323,7 +323,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
                     borderRadius: BorderRadius.circular(15)),
                 elevation: 4,
                 child: ListTile(
-                  leading: Icon(Icons.login, size: 40, color: Colors.green),
+                  leading: const Icon(Icons.login, size: 40, color: Colors.green),
                   title: const Text('Check-In Status',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -339,7 +339,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
                     borderRadius: BorderRadius.circular(15)),
                 elevation: 4,
                 child: ListTile(
-                  leading: Icon(Icons.logout, size: 40, color: Colors.red),
+                  leading: const Icon(Icons.logout, size: 40, color: Colors.red),
                   title: const Text('Check-Out Status',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

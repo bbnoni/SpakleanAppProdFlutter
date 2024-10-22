@@ -92,11 +92,11 @@ class _OfficeScreenState extends State<OfficeScreen> {
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
+              const PopupMenuItem<String>(
                 value: 'logout',
                 height: 40, // Reduce the height of the menu item
                 child: Row(
-                  children: const [
+                  children: [
                     Icon(Icons.logout, color: Colors.black),
                     SizedBox(width: 10),
                     Text('Logout'),

@@ -6,7 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 class ReportScreen extends StatefulWidget {
   final String userId;
-  const ReportScreen({Key? key, required this.userId}) : super(key: key);
+  const ReportScreen({super.key, required this.userId});
 
   @override
   _ReportScreenState createState() => _ReportScreenState();
@@ -150,7 +150,7 @@ class _ReportScreenState extends State<ReportScreen> {
             Text('Latitude: ${task['latitude']}'),
             Text('Longitude: ${task['longitude']}'),
             const SizedBox(height: 8.0),
-            Text('Area Scores:'),
+            const Text('Area Scores:'),
             ...task['area_scores'].entries.map((entry) {
               return Text('${entry.key}: ${entry.value.toStringAsFixed(2)}%');
             }).toList(),

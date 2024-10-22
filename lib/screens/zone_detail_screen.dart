@@ -149,9 +149,9 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
               ),
             )
           else
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: const Text(
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
                 'Zone Score: N/A',
                 style: TextStyle(
                   fontSize: 20,

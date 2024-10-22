@@ -48,9 +48,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
           print('Fetched Facility Score Data: $data');
 
           // Set facility score or N/A if no score is available
-          _facilityScore = data['total_facility_score'] == null
-              ? null
-              : data['total_facility_score'];
+          _facilityScore = data['total_facility_score'];
         });
       } else {
         print(

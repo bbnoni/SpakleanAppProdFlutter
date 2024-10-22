@@ -5,7 +5,7 @@ import 'office_screen.dart'; // Import the office screen
 class SectorSelectionScreen extends StatelessWidget {
   final String userId; // We'll still need the userId
 
-  SectorSelectionScreen({Key? key, required this.userId}) : super(key: key);
+  SectorSelectionScreen({super.key, required this.userId});
 
   // List of available sectors
   final List<String> sectors = [

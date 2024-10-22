@@ -23,7 +23,7 @@ class _AdminPageState extends State<AdminPage> {
   // Controllers for Create Office and Room Section
   final _officeController = TextEditingController();
   final _roomController = TextEditingController();
-  List<String> _addedRooms =
+  final List<String> _addedRooms =
       []; // List to store multiple rooms before submission
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
@@ -46,7 +46,7 @@ class _AdminPageState extends State<AdminPage> {
   List<dynamic> _users = []; // List to store users
   List<dynamic> _offices = []; // List to store offices assigned to the user
   bool _isLoading = false; // Loading indicator for API requests
-  List<bool> _isExpanded = [
+  final List<bool> _isExpanded = [
     false,
     false,
     false,

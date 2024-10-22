@@ -266,14 +266,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         return AlertDialog(
           title: const Text('Submission Summary'),
           content: Text(
-            'Room: ${widget.roomName}\n'
-                    'Submission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\n'
-                    'Location: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}\n'
-                    'Area Scores:\n' +
-                areaScores.entries
+            'Room: ${widget.roomName}\nSubmission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\nLocation: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}\nArea Scores:\n${areaScores.entries
                     .map((entry) =>
                         '${entry.key}: ${entry.value.toStringAsFixed(2)}%')
-                    .join('\n'),
+                    .join('\n')}',
           ),
           actions: <Widget>[
             TextButton(

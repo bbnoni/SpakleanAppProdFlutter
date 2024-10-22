@@ -6,18 +6,18 @@ class SubmissionScreen extends StatefulWidget {
   final Map<String, dynamic> submissionData; // Data passed to the screen
 
   const SubmissionScreen({
-    Key? key,
+    super.key,
     required this.userId,
     required this.roomId,
     required this.submissionData,
-  }) : super(key: key);
+  });
 
   @override
   _SubmissionScreenState createState() => _SubmissionScreenState();
 }
 
 class _SubmissionScreenState extends State<SubmissionScreen> {
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void initState() {
@@ -42,19 +42,19 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
             : ListView(
                 children: [
                   Text('Room ID: ${widget.roomId}',
-                      style: TextStyle(fontSize: 18)),
+                      style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 10),
                   Text('User ID: ${widget.userId}',
-                      style: TextStyle(fontSize: 18)),
+                      style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 20),
                   Text('Task Type: ${submissionData['task_type']}',
-                      style: TextStyle(fontSize: 16)),
+                      style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 10),
                   Text('Submission Time: ${submissionData['submission_time']}',
-                      style: TextStyle(fontSize: 16)),
+                      style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 20),
                   Text('Room Score: ${submissionData['room_score']}',
-                      style: TextStyle(fontSize: 18)),
+                      style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 20),
                   const Text('Area Scores:',
                       style:
@@ -64,7 +64,7 @@ class _SubmissionScreenState extends State<SubmissionScreen> {
                     final area = entry.key;
                     final score = entry.value;
                     return Text('$area: $score%',
-                        style: TextStyle(fontSize: 16));
+                        style: const TextStyle(fontSize: 16));
                   }).toList(),
                 ],
               ),

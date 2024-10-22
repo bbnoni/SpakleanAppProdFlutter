@@ -113,7 +113,7 @@ class _FacilityReportScreenState extends State<FacilityReportScreen> {
                                 'Rooms: ${zone['room_names'].join(', ')}',
                                 style: const TextStyle(fontSize: 16),
                               ),
-                              trailing: Icon(Icons.arrow_forward_ios),
+                              trailing: const Icon(Icons.arrow_forward_ios),
                               onTap: () {
                                 // You can add navigation to specific zone details if necessary
                               },
