@@ -33,6 +33,8 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
   bool _isButtonDisabled =
       false; // Disable check-in/out for the rest of the day
 
+  List<Map<String, dynamic>> _attendanceHistory = []; // History storage
+
   // Helper function to get unique keys based on user and office
   String _generateKey(String key) => '${widget.userId}_${widget.officeId}_$key';
 
@@ -43,10 +45,11 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
     _fetchAttendanceStatus();
   }
 
-  // Load attendance status from SharedPreferences (for specific user and office)
+  // Load attendance status and history from SharedPreferences (for specific user and office)
   Future<void> _loadAttendanceStatusFromPrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
+      // Load the current check-in and check-out details
       if (prefs.containsKey(_generateKey('checkInTime'))) {
         checkInTime =
             DateTime.parse(prefs.getString(_generateKey('checkInTime'))!);
@@ -70,6 +73,12 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
         }
       }
 
+      // Load the attendance history
+      if (prefs.containsKey(_generateKey('attendanceHistory'))) {
+        _attendanceHistory = List<Map<String, dynamic>>.from(
+            jsonDecode(prefs.getString(_generateKey('attendanceHistory'))!));
+      }
+
       // Disable the button if user already checked in today
       if (lastCheckInDate != null) {
         final now = DateTime.now();
@@ -83,7 +92,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
     });
   }
 
-  // Save attendance status to SharedPreferences (specific to user and office)
+  // Save attendance status and history to SharedPreferences (specific to user and office)
   Future<void> _saveAttendanceStatusToPrefs() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (checkInTime != null) {
@@ -101,6 +110,18 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
       prefs.setDouble(_generateKey('checkOutLong'), checkOutLong ?? 0);
       prefs.setString(
           _generateKey('lastCheckOutDate'), DateTime.now().toIso8601String());
+
+      // Add this check-in/out session to history
+      _attendanceHistory.add({
+        "checkInTime": checkInTime!.toIso8601String(),
+        "checkOutTime": checkOutTime!.toIso8601String(),
+        "checkInLat": checkInLat,
+        "checkInLong": checkInLong,
+        "checkOutLat": checkOutLat,
+        "checkOutLong": checkOutLong
+      });
+      prefs.setString(
+          _generateKey('attendanceHistory'), jsonEncode(_attendanceHistory));
     }
   }
 
@@ -224,6 +245,28 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
     }
   }
 
+  // Display the attendance history
+  Widget _buildAttendanceHistory() {
+    if (_attendanceHistory.isEmpty) {
+      return const Text("No attendance history available.");
+    }
+    return ListView.separated(
+      shrinkWrap: true,
+      itemCount: _attendanceHistory.length,
+      separatorBuilder: (context, index) => Divider(),
+      itemBuilder: (context, index) {
+        final record = _attendanceHistory[index];
+        return ListTile(
+          title: Text(
+              'Check-In: ${record['checkInTime']} - Check-Out: ${record['checkOutTime']}'),
+          subtitle: Text(
+              'Location: Check-In (${record['checkInLat']}, ${record['checkInLong']})\n'
+              'Check-Out (${record['checkOutLat']}, ${record['checkOutLong']})'),
+        );
+      },
+    );
+  }
+
   Widget _buildAttendanceButton() {
     return ElevatedButton.icon(
       onPressed: (_isButtonDisabled)
@@ -308,6 +351,15 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
               ),
             const SizedBox(height: 30),
             _buildAttendanceButton(),
+            const SizedBox(height: 30),
+            const Divider(thickness: 2),
+            const Text("Attendance History",
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey)),
+            const SizedBox(height: 10),
+            Expanded(child: _buildAttendanceHistory()),
           ],
         ),
       ),
