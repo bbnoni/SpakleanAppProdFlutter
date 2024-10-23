@@ -119,15 +119,17 @@ class _OfficeScreenState extends State<OfficeScreen> {
                       children: [
                         ListTile(
                           title: Text(
-                            _assignedOffices[index]['name'],
+                            _assignedOffices[index]['name'], // Office name
                             style: const TextStyle(
                               fontSize: 18.0,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          subtitle: const Text(
-                            'Tap to view more details',
-                            style: TextStyle(fontSize: 14.0),
+                          subtitle: Text(
+                            'Sector: ${_assignedOffices[index]['sector']}', // Display sector information
+                            style: const TextStyle(
+                              fontSize: 14.0,
+                            ),
                           ),
                           trailing: const Icon(
                             Icons.arrow_forward_ios,

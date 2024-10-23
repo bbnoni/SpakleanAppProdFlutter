@@ -28,12 +28,13 @@ class _AdminPageState extends State<AdminPage> {
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
   String? _selectedOffice; // Currently selected office for room assignment
+  String? _selectedSector; // Currently selected sector
 
   // Controller for Reset Password Section
   final _newPasswordController =
       TextEditingController(); // Controller for new password
 
-  // Available Roles and Zones
+  // Available Roles, Zones, and Sectors
   final List<String> _roles = ['Custodian', 'Admin', 'Manager', 'CEO'];
   final List<String> _zones = [
     'Low Traffic Areas (Yellow Zone)',
@@ -42,6 +43,15 @@ class _AdminPageState extends State<AdminPage> {
     'High Microbial Areas (Red Zone)',
     'Outdoors & Exteriors (Black Zone)'
   ];
+
+  final List<String> _sectors = [
+    'Banking',
+    'Manufacturing',
+    'Education',
+    'Aviation',
+    'Residentials',
+    'Health'
+  ]; // Add sectors list
 
   List<dynamic> _users = []; // List to store users
   List<dynamic> _offices = []; // List to store offices assigned to the user
@@ -215,11 +225,13 @@ class _AdminPageState extends State<AdminPage> {
     final officeName = _officeController.text;
     final userId = _selectedUser;
     final zone = _selectedZone;
+    final sector = _selectedSector; // Add sector to the request
 
     if (officeName.isEmpty ||
         _addedRooms.isEmpty ||
         userId == null ||
-        zone == null) {
+        zone == null ||
+        sector == null) {
       _showError('Please enter all required fields.');
       return;
     }
@@ -237,7 +249,8 @@ class _AdminPageState extends State<AdminPage> {
           'office_name': officeName,
           'room_names': _addedRooms,
           'user_id': userId,
-          'zone': zone
+          'zone': zone,
+          'sector': sector // Include sector in the request
         }),
       );
 
@@ -298,7 +311,6 @@ class _AdminPageState extends State<AdminPage> {
         }),
       );
 
-      // Now check for the correct status code (201)
       if (response.statusCode == 201) {
         _showSuccess('Rooms added to user successfully.');
         _clearRoomInput();
@@ -336,6 +348,7 @@ class _AdminPageState extends State<AdminPage> {
     setState(() {
       _selectedUser = null;
       _selectedZone = null;
+      _selectedSector = null; // Clear the selected sector
     });
   }
 
@@ -573,6 +586,23 @@ class _AdminPageState extends State<AdminPage> {
                             return DropdownMenuItem<String>(
                               value: zone,
                               child: Text(zone),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButton<String>(
+                          value: _selectedSector, // Add sector dropdown
+                          hint: const Text('Select a Sector'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedSector = newValue;
+                            });
+                          },
+                          items: _sectors.map((sector) {
+                            return DropdownMenuItem<String>(
+                              value: sector,
+                              child: Text(sector),
                             );
                           }).toList(),
                         ),
