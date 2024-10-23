@@ -298,7 +298,8 @@ class _AdminPageState extends State<AdminPage> {
         }),
       );
 
-      if (response.statusCode == 200) {
+      // Now check for the correct status code (201)
+      if (response.statusCode == 201) {
         _showSuccess('Rooms added to user successfully.');
         _clearRoomInput();
       } else {

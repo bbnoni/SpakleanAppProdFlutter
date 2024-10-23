@@ -1,11 +1,11 @@
-import 'dart:convert'; // For decoding the response
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // For secure storage
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-import 'change_password_screen.dart'; // Import the ChangePasswordScreen
-import 'office_screen.dart'; // Import OfficeScreen to pass user_id
+import 'change_password_screen.dart';
+import 'office_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,15 +23,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() async {
     final email = _emailController.text
         .trim()
-        .toLowerCase(); // Convert email to lowercase to remove case sensitivity
+        .toLowerCase(); // Convert email to lowercase
     final password = _passwordController.text;
 
     // Check if fields are empty
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both email and password.'),
-        ),
+        const SnackBar(content: Text('Please enter both email and password.')),
       );
       return;
     }
@@ -47,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'username': email, // Send lowercased email to server
+          'username': email,
           'password': password,
         }),
       );
@@ -56,8 +54,9 @@ class _LoginScreenState extends State<LoginScreen> {
         final responseData = jsonDecode(response.body);
         final role = responseData['role'];
         final userId = responseData['user_id'];
-        final accessToken = responseData['access_token']; // Fetch access token
-        final passwordChangeRequired = responseData['password_change_required'];
+        final accessToken = responseData['access_token']; // Get access token
+        final passwordChangeRequired = responseData[
+            'password_change_required']; // Get password change flag
 
         if (userId == null) {
           throw Exception("User ID is null");
@@ -66,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Store access token securely
         await _storage.write(key: 'access_token', value: accessToken);
 
-        // If password change is required, navigate to change password screen
+        // If password change is required, navigate to Change Password screen
         if (passwordChangeRequired == true) {
           Navigator.pushReplacement(
             context,
@@ -83,38 +82,108 @@ class _LoginScreenState extends State<LoginScreen> {
         if (role == 'Admin') {
           Navigator.pushReplacementNamed(context, '/admin');
         } else if (role == 'Custodian') {
-          // Pass userId to the OfficeScreen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => OfficeScreen(
-                  userId:
-                      userId.toString()), // Ensure userId is passed as a string
+                  userId: userId.toString()), // Pass userId to OfficeScreen
             ),
           );
         }
       } else {
-        // Handle login error
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Login failed. Please check your credentials.'),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An error occurred: $e')),
+          const SnackBar(
+              content: Text('Login failed. Please check your credentials.')),
         );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false; // Hide loading indicator
-        });
+      setState(() {
+        _isLoading = false; // Hide loading indicator
+      });
+    }
+  }
+
+  // Show a dialog to collect the email address for forgot password
+  Future<void> _showForgotPasswordDialog() async {
+    final TextEditingController emailController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Forgot Password'),
+          content: TextField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'Enter your email',
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _forgotPassword(emailController.text.trim());
+                Navigator.of(context).pop();
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Forgot password API call
+  Future<void> _forgotPassword(String email) async {
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email address.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://spaklean-app-prod.onrender.com/api/auth/forgot_password'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Password reset link sent to your email.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to send password reset email.')),
+        );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -141,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: Colors.blueAccent,
                 ),
               ),
-              const SizedBox(height: 32), // Add spacing
+              const SizedBox(height: 32),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -154,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       vertical: 16.0, horizontal: 16.0),
                 ),
               ),
-              const SizedBox(height: 16), // Add spacing between input fields
+              const SizedBox(height: 16),
               TextField(
                 controller: _passwordController,
                 obscureText: true,
@@ -167,10 +236,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       vertical: 16.0, horizontal: 16.0),
                 ),
               ),
-              const SizedBox(height: 24), // Add more space above login button
+              const SizedBox(height: 24),
               _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator()) // Loading indicator
+                  ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _login,
                       style: ElevatedButton.styleFrom(
@@ -184,6 +252,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(fontSize: 18),
                       ),
                     ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _showForgotPasswordDialog, // Trigger forgot password
+                child: const Text(
+                  'Forgot Password?',
+                  style: TextStyle(color: Colors.blueAccent),
+                ),
+              ),
             ],
           ),
         ),
