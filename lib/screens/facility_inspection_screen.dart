@@ -103,6 +103,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
                     Colors.yellow,
                     Icons.traffic,
                     'Low Traffic Areas (Yellow Zone)',
+                    textColor: Colors.black,
                   ),
                   _buildInspectionTile(
                     context,
