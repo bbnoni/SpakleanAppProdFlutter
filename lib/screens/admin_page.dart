@@ -16,6 +16,12 @@ class _AdminPageState extends State<AdminPage> {
   final storage = const FlutterSecureStorage();
 
   // Controllers for Create User Section
+  final _firstNameController =
+      TextEditingController(); // New first name controller
+  final _middleNameController =
+      TextEditingController(); // New middle name controller
+  final _lastNameController =
+      TextEditingController(); // New last name controller
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _selectedRole;
@@ -132,11 +138,18 @@ class _AdminPageState extends State<AdminPage> {
 
   // Method to create a new user (for the Create User section)
   Future<void> _createUser() async {
+    final firstName = _firstNameController.text; // New first name field
+    final middleName = _middleNameController.text; // New middle name field
+    final lastName = _lastNameController.text; // New last name field
     final username = _usernameController.text;
     final password = _passwordController.text;
     final role = _selectedRole;
 
-    if (username.isEmpty || password.isEmpty || role == null) {
+    if (firstName.isEmpty ||
+        lastName.isEmpty ||
+        username.isEmpty ||
+        password.isEmpty ||
+        role == null) {
       _showError('Please enter all required fields.');
       return;
     }
@@ -149,8 +162,14 @@ class _AdminPageState extends State<AdminPage> {
       final response = await http.post(
         Uri.parse('https://spaklean-app-prod.onrender.com/api/auth/register'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(
-            {'username': username, 'password': password, 'role': role}),
+        body: jsonEncode({
+          'first_name': firstName, // Send first name
+          'middle_name': middleName, // Send middle name
+          'last_name': lastName, // Send last name
+          'username': username,
+          'password': password,
+          'role': role,
+        }),
       );
 
       if (response.statusCode == 201) {
@@ -167,6 +186,18 @@ class _AdminPageState extends State<AdminPage> {
         _isLoading = false;
       });
     }
+  }
+
+  // Clear user input fields
+  void _clearUserInput() {
+    _firstNameController.clear(); // Clear first name
+    _middleNameController.clear(); // Clear middle name
+    _lastNameController.clear(); // Clear last name
+    _usernameController.clear();
+    _passwordController.clear();
+    setState(() {
+      _selectedRole = null;
+    });
   }
 
   // Method to reset the password of an existing user
@@ -326,15 +357,6 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
-  // Clear user input fields
-  void _clearUserInput() {
-    _usernameController.clear();
-    _passwordController.clear();
-    setState(() {
-      _selectedRole = null;
-    });
-  }
-
   // Clear password input fields
   void _clearPasswordInput() {
     _newPasswordController.clear();
@@ -438,6 +460,27 @@ class _AdminPageState extends State<AdminPage> {
                     },
                     body: Column(
                       children: [
+                        TextField(
+                          controller:
+                              _firstNameController, // New first name field
+                          decoration:
+                              const InputDecoration(labelText: 'First Name'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller:
+                              _middleNameController, // New middle name field
+                          decoration:
+                              const InputDecoration(labelText: 'Middle Name'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller:
+                              _lastNameController, // New last name field
+                          decoration:
+                              const InputDecoration(labelText: 'Last Name'),
+                        ),
+                        const SizedBox(height: 10),
                         TextField(
                           controller: _usernameController,
                           decoration:
