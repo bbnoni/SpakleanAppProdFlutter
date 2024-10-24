@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:location/location.dart'; // Import location package
 
 class CheckpointScreen extends StatefulWidget {
   final String roomId;
@@ -120,7 +121,47 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   void initState() {
     super.initState();
     selections = defectOptions.map((key, value) => MapEntry(key, <String>{}));
-    _fetchLocation();
+    _getCurrentLocation(); // Fetch dynamic location on init
+  }
+
+  // Use the 'location' package to get dynamic location with high accuracy
+  Future<void> _getCurrentLocation() async {
+    Location location = Location();
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+    LocationData? locationData;
+
+    // Check if location service is enabled
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return; // If service not enabled, return early
+      }
+    }
+
+    // Check for location permission
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return; // If permission denied, return early
+      }
+    }
+
+    // Set location accuracy to high
+    location.changeSettings(
+      accuracy: LocationAccuracy.high,
+    );
+
+    // Get location data
+    locationData = await location.getLocation();
+
+    // Set the location data
+    setState(() {
+      latitude = locationData?.latitude;
+      longitude = locationData?.longitude;
+    });
   }
 
   Map<String, double> _calculateAreaScores() {
@@ -140,24 +181,6 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     });
 
     return areaScores;
-  }
-
-  Future<void> _fetchLocation() async {
-    try {
-      final response = await http.get(Uri.parse('https://ipinfo.io/json'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data["loc"] != null) {
-          final loc = data["loc"].split(',');
-          setState(() {
-            latitude = double.tryParse(loc[0]);
-            longitude = double.tryParse(loc[1]);
-          });
-        }
-      }
-    } catch (e) {
-      print("Exception while fetching location: $e");
-    }
   }
 
   String? _getIncompleteCategory() {
@@ -208,7 +231,6 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         }
       }
 
-      // Fetch facility score
       final facilityScoreUrl = Uri.encodeFull(
         'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}',
       );
@@ -266,10 +288,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         return AlertDialog(
           title: const Text('Submission Summary'),
           content: Text(
-            'Room: ${widget.roomName}\nSubmission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\nLocation: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}\nArea Scores:\n${areaScores.entries
-                    .map((entry) =>
-                        '${entry.key}: ${entry.value.toStringAsFixed(2)}%')
-                    .join('\n')}',
+            'Room: ${widget.roomName}\nSubmission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\nLocation: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}\nArea Scores:\n${areaScores.entries.map((entry) => '${entry.key}: ${entry.value.toStringAsFixed(2)}%').join('\n')}',
           ),
           actions: <Widget>[
             TextButton(

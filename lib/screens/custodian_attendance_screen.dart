@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart'; // Import intl for date formatting
+import 'package:location/location.dart'; // Import location package
 
 class CustodianAttendanceScreen extends StatefulWidget {
   final String userId;
@@ -142,34 +143,49 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
     }
   }
 
-  // Fetch location from API
+  // Fetch dynamic location using the 'location' package
   Future<void> _fetchLocation() async {
-    try {
-      final response = await http.get(Uri.parse('https://ipinfo.io/json'));
+    Location location = Location();
+    bool serviceEnabled;
+    PermissionStatus permissionGranted;
+    LocationData? locationData;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data["loc"] != null) {
-          final loc = data["loc"].split(',');
-          final lat = double.tryParse(loc[0]);
-          final long = double.tryParse(loc[1]);
-
-          setState(() {
-            if (checkInTime == null) {
-              checkInLat = lat;
-              checkInLong = long;
-              checkInTime = DateTime.now(); // Capture check-in time
-            } else if (checkOutTime == null) {
-              checkOutLat = lat;
-              checkOutLong = long;
-              checkOutTime = DateTime.now(); // Capture check-out time
-            }
-          });
-        }
+    // Check if location service is enabled
+    serviceEnabled = await location.serviceEnabled();
+    if (!serviceEnabled) {
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return; // If service not enabled, return early
       }
-    } catch (e) {
-      print("Error fetching location: $e");
     }
+
+    // Check for location permission
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != PermissionStatus.granted) {
+        return; // If permission denied, return early
+      }
+    }
+
+    // Set location accuracy to high
+    location.changeSettings(accuracy: LocationAccuracy.high);
+
+    // Get location data
+    locationData = await location.getLocation();
+
+    // Set the location data
+    setState(() {
+      if (checkInTime == null) {
+        checkInLat = locationData?.latitude;
+        checkInLong = locationData?.longitude;
+        checkInTime = DateTime.now(); // Capture check-in time
+      } else if (checkOutTime == null) {
+        checkOutLat = locationData?.latitude;
+        checkOutLong = locationData?.longitude;
+        checkOutTime = DateTime.now(); // Capture check-out time
+      }
+    });
   }
 
   // Submit attendance (check-in or check-out)

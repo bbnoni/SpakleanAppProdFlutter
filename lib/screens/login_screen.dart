@@ -201,6 +201,17 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
+              // Add Image at the top of the screen
+              Container(
+                alignment: Alignment.center,
+                padding:
+                    const EdgeInsets.only(bottom: 20.0), // Add some spacing
+                child: Image.asset(
+                  '/Users/benoniokaikoi/development/playground/spaklean_app/lib/assets/icon/SpakleanLogo.jpg', // Adjust the path based on your asset location
+                  height: 80.0, // Set desired height
+                  width: 80.0, // Set desired width
+                ),
+              ),
               const Text(
                 'Welcome!',
                 textAlign: TextAlign.center,
@@ -249,7 +260,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: const Text(
                         'Login',
-                        style: TextStyle(fontSize: 18),
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
               const SizedBox(height: 16),

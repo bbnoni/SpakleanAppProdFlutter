@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // Import intl for date formatting
 import 'package:table_calendar/table_calendar.dart';
 
 class ReportScreen extends StatefulWidget {
@@ -96,8 +97,9 @@ class _ReportScreenState extends State<ReportScreen> {
 
   // Filter tasks by selected date
   List<dynamic> _getTasksForSelectedDate() {
-    final selectedDateFormatted =
-        _selectedDate.toIso8601String().substring(0, 10);
+    final DateFormat formatter = DateFormat('yyyy-MM-dd');
+    final selectedDateFormatted = formatter.format(_selectedDate);
+
     return _tasks.where((task) {
       final taskDate = task['date_submitted'].substring(0, 10);
       return taskDate == selectedDateFormatted;
@@ -142,7 +144,8 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
             ),
             const SizedBox(height: 8.0),
-            Text('Date: ${task['date_submitted']}'),
+            Text(
+                'Date: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(task['date_submitted']))}'),
             Text('Room Score: ${task['room_score']?.toStringAsFixed(2)}%'),
             Text('Zone: $zoneName'),
             Text('Zone Score: $zoneScore'), // Display zone score
