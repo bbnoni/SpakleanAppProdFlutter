@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart'; // Import intl for date formatting
 
 class CustodianAttendanceScreen extends StatefulWidget {
   final String userId;
@@ -19,127 +19,48 @@ class CustodianAttendanceScreen extends StatefulWidget {
       _CustodianAttendanceScreenState();
 }
 
-class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
+class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
+    with WidgetsBindingObserver {
   DateTime? checkInTime;
   DateTime? checkOutTime;
-  DateTime? lastCheckInDate;
-  DateTime? lastCheckOutDate;
   double? checkInLat;
   double? checkInLong;
   double? checkOutLat;
   double? checkOutLong;
 
   bool _isLoading = false;
-  bool _isButtonDisabled =
-      false; // Disable check-in/out for the rest of the day
+  bool _isButtonDisabled = false;
 
-  List<Map<String, dynamic>> _attendanceHistory = []; // History storage
-
-  // Helper function to get unique keys based on user and office
-  String _generateKey(String key) => '${widget.userId}_${widget.officeId}_$key';
+  List<Map<String, dynamic>> _attendanceHistory = [];
 
   @override
   void initState() {
     super.initState();
-    _loadAttendanceStatusFromPrefs();
-    _fetchAttendanceStatus();
+    WidgetsBinding.instance.addObserver(this); // To observe app lifecycle
+    _fetchAttendanceStatus(); // Fetch attendance status when page loads
   }
 
-  // Load attendance status and history from SharedPreferences (for specific user and office)
-  Future<void> _loadAttendanceStatusFromPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      // Load the current check-in and check-out details
-      if (prefs.containsKey(_generateKey('checkInTime'))) {
-        checkInTime =
-            DateTime.parse(prefs.getString(_generateKey('checkInTime'))!);
-        checkInLat = prefs.getDouble(_generateKey('checkInLat'));
-        checkInLong = prefs.getDouble(_generateKey('checkInLong'));
-
-        if (prefs.containsKey(_generateKey('lastCheckInDate'))) {
-          lastCheckInDate = DateTime.tryParse(
-              prefs.getString(_generateKey('lastCheckInDate')) ?? '');
-        }
-      }
-      if (prefs.containsKey(_generateKey('checkOutTime'))) {
-        checkOutTime =
-            DateTime.parse(prefs.getString(_generateKey('checkOutTime'))!);
-        checkOutLat = prefs.getDouble(_generateKey('checkOutLat'));
-        checkOutLong = prefs.getDouble(_generateKey('checkOutLong'));
-
-        if (prefs.containsKey(_generateKey('lastCheckOutDate'))) {
-          lastCheckOutDate = DateTime.tryParse(
-              prefs.getString(_generateKey('lastCheckOutDate')) ?? '');
-        }
-      }
-
-      // Load the attendance history
-      if (prefs.containsKey(_generateKey('attendanceHistory'))) {
-        _attendanceHistory = List<Map<String, dynamic>>.from(
-            jsonDecode(prefs.getString(_generateKey('attendanceHistory'))!));
-      }
-
-      // Disable the button if user already checked in today
-      if (lastCheckInDate != null) {
-        final now = DateTime.now();
-        if (now.year == lastCheckInDate!.year &&
-            now.month == lastCheckInDate!.month &&
-            now.day == lastCheckInDate!.day) {
-          _isButtonDisabled =
-              checkOutTime != null; // Only disable after check-out
-        }
-      }
-    });
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this); // Remove observer
+    super.dispose();
   }
 
-  // Save attendance status and history to SharedPreferences (specific to user and office)
-  Future<void> _saveAttendanceStatusToPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (checkInTime != null) {
-      prefs.setString(
-          _generateKey('checkInTime'), checkInTime!.toIso8601String());
-      prefs.setDouble(_generateKey('checkInLat'), checkInLat ?? 0);
-      prefs.setDouble(_generateKey('checkInLong'), checkInLong ?? 0);
-      prefs.setString(
-          _generateKey('lastCheckInDate'), DateTime.now().toIso8601String());
+  // Listen to when the app is resumed to check status again
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _fetchAttendanceStatus(); // Re-fetch attendance when user returns
     }
-    if (checkOutTime != null) {
-      prefs.setString(
-          _generateKey('checkOutTime'), checkOutTime!.toIso8601String());
-      prefs.setDouble(_generateKey('checkOutLat'), checkOutLat ?? 0);
-      prefs.setDouble(_generateKey('checkOutLong'), checkOutLong ?? 0);
-      prefs.setString(
-          _generateKey('lastCheckOutDate'), DateTime.now().toIso8601String());
-
-      // Add this check-in/out session to history
-      _attendanceHistory.add({
-        "checkInTime": checkInTime!.toIso8601String(),
-        "checkOutTime": checkOutTime!.toIso8601String(),
-        "checkInLat": checkInLat,
-        "checkInLong": checkInLong,
-        "checkOutLat": checkOutLat,
-        "checkOutLong": checkOutLong
-      });
-      prefs.setString(
-          _generateKey('attendanceHistory'), jsonEncode(_attendanceHistory));
-    }
-  }
-
-  // Clear attendance status from SharedPreferences (specific to user and office)
-  Future<void> _clearAttendanceStatusFromPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove(_generateKey('checkInTime'));
-    prefs.remove(_generateKey('checkInLat'));
-    prefs.remove(_generateKey('checkInLong'));
-    prefs.remove(_generateKey('checkOutTime'));
-    prefs.remove(_generateKey('checkOutLat'));
-    prefs.remove(_generateKey('checkOutLong'));
-    prefs.remove(_generateKey('lastCheckInDate'));
-    prefs.remove(_generateKey('lastCheckOutDate'));
+    super.didChangeAppLifecycleState(state);
   }
 
   // Fetch attendance status from DB (backend for specific user and office)
   Future<void> _fetchAttendanceStatus() async {
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final response = await http.get(
         Uri.parse(
@@ -148,8 +69,9 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['check_in_time'] != null) {
-          setState(() {
+
+        setState(() {
+          if (data['check_in_time'] != null) {
             checkInTime = DateTime.parse(data['check_in_time']);
             checkInLat = data['check_in_lat'];
             checkInLong = data['check_in_long'];
@@ -158,20 +80,73 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
                 : null;
             checkOutLat = data['check_out_lat'];
             checkOutLong = data['check_out_long'];
+          } else {
+            checkInTime = null; // Reset if no check-in exists
+            checkOutTime = null;
+          }
+        });
 
-            _saveAttendanceStatusToPrefs(); // Save status locally
-          });
-        }
+        // Ensure the button is disabled after checkout
+        _checkIfAttendanceTakenToday();
+        _fetchAttendanceHistory(); // Fetch the attendance history
       }
     } catch (e) {
       print("Error fetching attendance status: $e");
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  // Fetch location from the API
+  // Check if the user has already taken attendance today
+  void _checkIfAttendanceTakenToday() {
+    final now = DateTime.now();
+
+    if (checkInTime != null &&
+        checkInTime!.year == now.year &&
+        checkInTime!.month == now.month &&
+        checkInTime!.day == now.day) {
+      _isButtonDisabled = checkOutTime != null;
+    } else {
+      setState(() {
+        checkInTime = null;
+        checkOutTime = null;
+        _isButtonDisabled = false;
+      });
+    }
+  }
+
+  // Fetch attendance history from the backend
+  Future<void> _fetchAttendanceHistory() async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://spaklean-app-prod.onrender.com/api/attendance/history?user_id=${widget.userId}&office_id=${widget.officeId}'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // Set the attendance history in reverse order to show latest first
+        setState(() {
+          _attendanceHistory = List<Map<String, dynamic>>.from(data['history'])
+              .reversed
+              .toList();
+        });
+      } else {
+        print("Failed to load attendance history.");
+      }
+    } catch (e) {
+      print("Error fetching attendance history: $e");
+    }
+  }
+
+  // Fetch location from API
   Future<void> _fetchLocation() async {
     try {
       final response = await http.get(Uri.parse('https://ipinfo.io/json'));
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data["loc"] != null) {
@@ -230,9 +205,9 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
           SnackBar(content: Text(isCheckIn ? 'Checked In!' : 'Checked Out!')),
         );
         if (!isCheckIn) {
-          _isButtonDisabled = true; // Disable the button after check-out
+          _isButtonDisabled = true; // Disable button after check-out
         }
-        _saveAttendanceStatusToPrefs(); // Save state after check-in or check-out
+        _fetchAttendanceHistory(); // Reload the attendance history after submitting
       } else {
         print("Failed to submit attendance: ${response.body}");
       }
@@ -243,6 +218,12 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  // Format DateTime using intl package
+  String _formatDateTime(DateTime dateTime) {
+    final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
+    return formatter.format(dateTime);
   }
 
   // Display the attendance history
@@ -258,10 +239,11 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
         final record = _attendanceHistory[index];
         return ListTile(
           title: Text(
-              'Check-In: ${record['checkInTime']} - Check-Out: ${record['checkOutTime']}'),
+              'Check-In: ${_formatDateTime(DateTime.parse(record['check_in_time']))} - '
+              'Check-Out: ${record['check_out_time'] != null ? _formatDateTime(DateTime.parse(record['check_out_time'])) : "Not checked out"}'),
           subtitle: Text(
-              'Location: Check-In (${record['checkInLat']}, ${record['checkInLong']})\n'
-              'Check-Out (${record['checkOutLat']}, ${record['checkOutLong']})'),
+              'Location: Check-In (${record['check_in_lat']}, ${record['check_in_long']})\n'
+              'Check-Out (${record['check_out_lat'] ?? "N/A"}, ${record['check_out_long'] ?? "N/A"})'),
         );
       },
     );
@@ -273,12 +255,12 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
           ? null
           : checkInTime == null
               ? () async {
-                  await _fetchLocation();
+                  await _fetchLocation(); // Fetch location before check-in
                   await _submitAttendance(isCheckIn: true); // Check-in
                 }
               : checkOutTime == null
                   ? () async {
-                      await _fetchLocation();
+                      await _fetchLocation(); // Fetch location before check-out
                       await _submitAttendance(isCheckIn: false); // Check-out
                     }
                   : null,
@@ -323,12 +305,13 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
                     borderRadius: BorderRadius.circular(15)),
                 elevation: 4,
                 child: ListTile(
-                  leading: const Icon(Icons.login, size: 40, color: Colors.green),
+                  leading:
+                      const Icon(Icons.login, size: 40, color: Colors.green),
                   title: const Text('Check-In Status',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   subtitle: Text(
-                      'Time: ${checkInTime.toString()}\nLocation: ($checkInLat, $checkInLong)'),
+                      'Time: ${_formatDateTime(checkInTime!)}\nLocation: ($checkInLat, $checkInLong)'),
                 ),
               ),
             if (checkInTime != null) const SizedBox(height: 10),
@@ -339,13 +322,14 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen> {
                     borderRadius: BorderRadius.circular(15)),
                 elevation: 4,
                 child: ListTile(
-                  leading: const Icon(Icons.logout, size: 40, color: Colors.red),
+                  leading:
+                      const Icon(Icons.logout, size: 40, color: Colors.red),
                   title: const Text('Check-Out Status',
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   subtitle: checkOutTime != null
                       ? Text(
-                          'Time: ${checkOutTime.toString()}\nLocation: ($checkOutLat, $checkOutLong)')
+                          'Time: ${_formatDateTime(checkOutTime!)}\nLocation: ($checkOutLat, $checkOutLong)')
                       : const Text("No check-out data available"),
                 ),
               ),
