@@ -72,24 +72,36 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
         final data = jsonDecode(response.body);
 
         setState(() {
-          if (data['check_in_time'] != null) {
-            checkInTime = DateTime.parse(data['check_in_time']);
-            checkInLat = data['check_in_lat'];
-            checkInLong = data['check_in_long'];
-            checkOutTime = data['check_out_time'] != null
-                ? DateTime.parse(data['check_out_time'])
-                : null;
-            checkOutLat = data['check_out_lat'];
-            checkOutLong = data['check_out_long'];
-          } else {
-            checkInTime = null; // Reset if no check-in exists
-            checkOutTime = null;
-          }
+          // Handle multiple check-ins and check-outs
+          _attendanceHistory =
+              List<Map<String, dynamic>>.from(data['attendance_today'] ?? []);
+          checkInTime = _attendanceHistory.isNotEmpty
+              ? DateTime.parse(_attendanceHistory.last['check_in_time'])
+              : null;
+          checkOutTime = _attendanceHistory.isNotEmpty &&
+                  _attendanceHistory.last['check_out_time'] != null
+              ? DateTime.parse(_attendanceHistory.last['check_out_time'])
+              : null;
+
+          checkInLat = _attendanceHistory.isNotEmpty
+              ? _attendanceHistory.last['check_in_lat']
+              : null;
+          checkInLong = _attendanceHistory.isNotEmpty
+              ? _attendanceHistory.last['check_in_long']
+              : null;
+          checkOutLat = _attendanceHistory.isNotEmpty &&
+                  _attendanceHistory.last['check_out_lat'] != null
+              ? _attendanceHistory.last['check_out_lat']
+              : null;
+          checkOutLong = _attendanceHistory.isNotEmpty &&
+                  _attendanceHistory.last['check_out_long'] != null
+              ? _attendanceHistory.last['check_out_long']
+              : null;
+
+          _checkIfAttendanceTakenToday(); // Re-check if button should be disabled
         });
 
-        // Ensure the button is disabled after checkout
-        _checkIfAttendanceTakenToday();
-        _fetchAttendanceHistory(); // Fetch the attendance history
+        _fetchAttendanceHistory(); // Fetch full attendance history
       }
     } catch (e) {
       print("Error fetching attendance status: $e");
@@ -104,17 +116,15 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
   void _checkIfAttendanceTakenToday() {
     final now = DateTime.now();
 
-    if (checkInTime != null &&
-        checkInTime!.year == now.year &&
-        checkInTime!.month == now.month &&
-        checkInTime!.day == now.day) {
-      _isButtonDisabled = checkOutTime != null;
-    } else {
+    // If check-out is completed, reset the state to allow another check-in
+    if (checkOutTime != null) {
       setState(() {
         checkInTime = null;
         checkOutTime = null;
-        _isButtonDisabled = false;
+        _isButtonDisabled = false; // Re-enable button for a new check-in
       });
+    } else {
+      _isButtonDisabled = false; // Allow multiple check-ins and check-outs
     }
   }
 
@@ -221,8 +231,14 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
           SnackBar(content: Text(isCheckIn ? 'Checked In!' : 'Checked Out!')),
         );
         if (!isCheckIn) {
-          _isButtonDisabled = true; // Disable button after check-out
+          setState(() {
+            // Reset state to allow a new check-in after check-out
+            checkInTime = null;
+            checkOutTime = null;
+            _isButtonDisabled = false;
+          });
         }
+        _fetchAttendanceStatus(); // Reload the attendance status after submitting
         _fetchAttendanceHistory(); // Reload the attendance history after submitting
       } else {
         print("Failed to submit attendance: ${response.body}");

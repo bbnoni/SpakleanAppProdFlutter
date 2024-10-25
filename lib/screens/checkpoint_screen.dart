@@ -30,6 +30,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   DateTime? _submissionTime;
   double? latitude;
   double? longitude;
+  bool _isSubmitting = false; // To manage the loading state
 
   final Map<String, List<String>> defectOptions = {
     'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None', 'N/A'],
@@ -193,6 +194,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   }
 
   Future<void> _submitDataToBackend() async {
+    setState(() {
+      _isSubmitting = true; // Show loading spinner
+    });
+
     final incompleteCategory = _getIncompleteCategory();
 
     if (incompleteCategory != null) {
@@ -202,6 +207,9 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
 
       // Scroll to the incomplete category
       _scrollToCategory(incompleteCategory);
+      setState(() {
+        _isSubmitting = false; // Hide loading spinner
+      });
       return;
     }
 
@@ -278,6 +286,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       }
     } catch (e) {
       print("Error submitting task: $e");
+    } finally {
+      setState(() {
+        _isSubmitting = false; // Hide loading spinner
+      });
     }
   }
 
@@ -343,17 +355,19 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               buildCategory('YARD', defectOptions['YARD']!),
               buildCategory('SANITARY WARE', defectOptions['SANITARY WARE']!),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _submitDataToBackend,
-                style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 50, vertical: 15),
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20))),
-                child: const Text('Submit',
-                    style: TextStyle(fontSize: 18, color: Colors.white)),
-              ),
+              _isSubmitting
+                  ? const CircularProgressIndicator() // Show spinner when submitting
+                  : ElevatedButton(
+                      onPressed: _submitDataToBackend,
+                      style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15),
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20))),
+                      child: const Text('Submit',
+                          style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
             ],
           ),
         ),

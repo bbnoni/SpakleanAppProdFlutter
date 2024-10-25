@@ -89,6 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   userId: userId.toString()), // Pass userId to OfficeScreen
             ),
           );
+        } else if (role == 'CEO') {
+          // Navigate to CEO dashboard if role is CEO
+          Navigator.pushReplacementNamed(context, '/ceo');
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(

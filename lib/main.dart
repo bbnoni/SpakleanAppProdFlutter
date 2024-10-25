@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/admin_page.dart';
+import 'screens/ceo_dashboard_screen.dart';
 import 'screens/facility_inspection_screen.dart';
 import 'screens/login_screen.dart';
 
@@ -20,6 +21,7 @@ class SpakleanApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/admin': (context) => const AdminPage(),
+        '/ceo': (context) => const CEODashboardScreen(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/facilityInspection') {
