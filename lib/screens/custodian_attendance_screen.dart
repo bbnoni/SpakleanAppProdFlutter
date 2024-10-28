@@ -114,6 +114,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
 
   // Check if the user has already taken attendance today
   void _checkIfAttendanceTakenToday() {
+    // ignore: unused_local_variable
     final now = DateTime.now();
 
     // If check-out is completed, reset the state to allow another check-in

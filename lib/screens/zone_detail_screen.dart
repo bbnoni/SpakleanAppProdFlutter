@@ -38,10 +38,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       // Properly encode the zone name before sending the request
       final encodedZone = Uri.encodeComponent(widget.zone);
 
-      // Append officeId as a query parameter to make the zone score unique to each office
+      // Append officeId and userId as query parameters to make the zone score unique to each individual
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}'),
+            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}&user_id=${widget.userId}'),
       );
 
       if (response.statusCode == 200) {
@@ -68,7 +68,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       // Properly encode the zone name before sending the request
       final encodedZone = Uri.encodeComponent(widget.zone);
 
-      // Append officeId as a query parameter to fetch rooms specific to that office
+      // Append officeId and userId as query parameters to fetch rooms specific to that user and office
       final response = await http.get(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/offices/${widget.officeId}/rooms/$encodedZone'),
@@ -125,6 +125,29 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   void _showError(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  // Create a room by sending a POST request to the backend
+  Future<void> createRoom(
+      String roomName, String zone, String userId, String officeId) async {
+    final response = await http.post(
+      Uri.parse('https://spaklean-app-prod.onrender.com/api/admin/create_room'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "name": roomName,
+        "zone": zone,
+        "office_id": officeId,
+        "user_id": userId // Ensure to send the user ID
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      print('Room created successfully');
+      // Optionally refresh the rooms list after creating a room
+      _fetchRooms();
+    } else {
+      print('Failed to create room: ${response.body}');
+    }
   }
 
   @override

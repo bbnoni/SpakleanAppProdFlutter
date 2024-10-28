@@ -28,17 +28,17 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
     _fetchFacilityScore(); // Fetch facility score when the screen loads
   }
 
-  // Fetch facility score for the selected office
+  // Fetch facility score for the selected office and user
   Future<void> _fetchFacilityScore() async {
     setState(() {
       _isLoading = true; // Show loading indicator
     });
 
     try {
-      // Add the officeId as a query parameter to fetch the score specific to that office
+      // Add userId as a query parameter to ensure score is fetched for the specific user
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}'),
+            'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.userId}'),
       );
 
       if (response.statusCode == 200) {
@@ -48,7 +48,9 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
           print('Fetched Facility Score Data: $data');
 
           // Set facility score or N/A if no score is available
-          _facilityScore = data['total_facility_score'];
+          _facilityScore = data['total_facility_score'] != "N/A"
+              ? data['total_facility_score']
+              : null;
         });
       } else {
         print(

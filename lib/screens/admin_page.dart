@@ -16,12 +16,9 @@ class _AdminPageState extends State<AdminPage> {
   final storage = const FlutterSecureStorage();
 
   // Controllers for Create User Section
-  final _firstNameController =
-      TextEditingController(); // New first name controller
-  final _middleNameController =
-      TextEditingController(); // New middle name controller
-  final _lastNameController =
-      TextEditingController(); // New last name controller
+  final _firstNameController = TextEditingController();
+  final _middleNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _selectedRole;
@@ -29,16 +26,15 @@ class _AdminPageState extends State<AdminPage> {
   // Controllers for Create Office and Room Section
   final _officeController = TextEditingController();
   final _roomController = TextEditingController();
-  final List<String> _addedRooms =
-      []; // List to store multiple rooms before submission
+  final List<String> _addedRooms = [];
+  final List<String> _selectedUsers = []; // Now support multiple selected users
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
   String? _selectedOffice; // Currently selected office for room assignment
   String? _selectedSector; // Currently selected sector
 
   // Controller for Reset Password Section
-  final _newPasswordController =
-      TextEditingController(); // Controller for new password
+  final _newPasswordController = TextEditingController();
 
   // Available Roles, Zones, and Sectors
   final List<String> _roles = ['Custodian', 'Admin', 'Manager', 'CEO'];
@@ -57,22 +53,18 @@ class _AdminPageState extends State<AdminPage> {
     'Aviation',
     'Residentials',
     'Health'
-  ]; // Add sectors list
+  ];
 
-  List<dynamic> _users = []; // List to store users
-  List<dynamic> _offices = []; // List to store offices assigned to the user
-  bool _isLoading = false; // Loading indicator for API requests
-  final List<bool> _isExpanded = [
-    false,
-    false,
-    false,
-    false
-  ]; // Track which panels are expanded
+  List<dynamic> _users = [];
+  List<dynamic> _offices = [];
+  bool _isLoading = false;
+  final List<bool> _isExpanded = [false, false, false, false, false];
 
   @override
   void initState() {
     super.initState();
     _fetchUsers(); // Fetch users when the admin page loads
+    _fetchOffices(); // Fetch list of offices
   }
 
   // Fetch list of users from the backend
@@ -102,15 +94,15 @@ class _AdminPageState extends State<AdminPage> {
     }
   }
 
-  // Fetch offices assigned to the selected user
-  Future<void> _fetchOfficesForUser(String userId) async {
+  // Fetch list of offices from the backend
+  Future<void> _fetchOffices() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
       final response = await http.get(Uri.parse(
-          'https://spaklean-app-prod.onrender.com/api/users/$userId/offices'));
+          'https://spaklean-app-prod.onrender.com/api/admin/offices'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -138,9 +130,9 @@ class _AdminPageState extends State<AdminPage> {
 
   // Method to create a new user (for the Create User section)
   Future<void> _createUser() async {
-    final firstName = _firstNameController.text; // New first name field
-    final middleName = _middleNameController.text; // New middle name field
-    final lastName = _lastNameController.text; // New last name field
+    final firstName = _firstNameController.text;
+    final middleName = _middleNameController.text;
+    final lastName = _lastNameController.text;
     final username = _usernameController.text;
     final password = _passwordController.text;
     final role = _selectedRole;
@@ -163,9 +155,9 @@ class _AdminPageState extends State<AdminPage> {
         Uri.parse('https://spaklean-app-prod.onrender.com/api/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'first_name': firstName, // Send first name
-          'middle_name': middleName, // Send middle name
-          'last_name': lastName, // Send last name
+          'first_name': firstName,
+          'middle_name': middleName,
+          'last_name': lastName,
           'username': username,
           'password': password,
           'role': role,
@@ -190,9 +182,9 @@ class _AdminPageState extends State<AdminPage> {
 
   // Clear user input fields
   void _clearUserInput() {
-    _firstNameController.clear(); // Clear first name
-    _middleNameController.clear(); // Clear middle name
-    _lastNameController.clear(); // Clear last name
+    _firstNameController.clear();
+    _middleNameController.clear();
+    _lastNameController.clear();
     _usernameController.clear();
     _passwordController.clear();
     setState(() {
@@ -230,8 +222,7 @@ class _AdminPageState extends State<AdminPage> {
             'https://spaklean-app-prod.onrender.com/api/auth/reset_password'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization':
-              'Bearer $token', // Include the JWT token in the headers
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({'user_id': userId, 'new_password': newPassword}),
       );
@@ -254,13 +245,14 @@ class _AdminPageState extends State<AdminPage> {
   // Method to create a new office and assign multiple rooms
   Future<void> _createOfficeAndRooms() async {
     final officeName = _officeController.text;
-    final userId = _selectedUser;
     final zone = _selectedZone;
     final sector = _selectedSector; // Add sector to the request
+    final selectedUserIds =
+        _selectedUsers; // Ensure multiple users are selected
 
     if (officeName.isEmpty ||
         _addedRooms.isEmpty ||
-        userId == null ||
+        selectedUserIds.isEmpty ||
         zone == null ||
         sector == null) {
       _showError('Please enter all required fields.');
@@ -279,7 +271,7 @@ class _AdminPageState extends State<AdminPage> {
         body: jsonEncode({
           'office_name': officeName,
           'room_names': _addedRooms,
-          'user_id': userId,
+          'user_ids': selectedUserIds, // Include the list of user IDs
           'zone': zone,
           'sector': sector // Include sector in the request
         }),
@@ -306,7 +298,7 @@ class _AdminPageState extends State<AdminPage> {
     if (room.isNotEmpty) {
       setState(() {
         _addedRooms.add(room);
-        _roomController.clear(); // Clear the room input
+        _roomController.clear();
       });
     }
   }
@@ -314,7 +306,7 @@ class _AdminPageState extends State<AdminPage> {
   // Method to add additional rooms to an existing user
   Future<void> _addMoreRooms() async {
     final userId = _selectedUser;
-    final officeId = _selectedOffice; // Get selected office
+    final officeId = _selectedOffice;
     final zone = _selectedZone;
 
     if (_addedRooms.isEmpty ||
@@ -337,7 +329,7 @@ class _AdminPageState extends State<AdminPage> {
         body: jsonEncode({
           'room_names': _addedRooms,
           'user_id': userId,
-          'office_id': officeId, // Include office for room assignment
+          'office_id': officeId,
           'zone': zone,
         }),
       );
@@ -366,11 +358,12 @@ class _AdminPageState extends State<AdminPage> {
   void _clearOfficeAndRoomInput() {
     _officeController.clear();
     _roomController.clear();
-    _addedRooms.clear(); // Clear the list of added rooms
+    _addedRooms.clear();
     setState(() {
       _selectedUser = null;
       _selectedZone = null;
-      _selectedSector = null; // Clear the selected sector
+      _selectedSector = null;
+      _selectedUsers.clear(); // Clear selected users
     });
   }
 
@@ -413,19 +406,17 @@ class _AdminPageState extends State<AdminPage> {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
-          // Popup menu for logout
           PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle,
-                size: 30), // Face icon for logout
+            icon: const Icon(Icons.account_circle, size: 30),
             onSelected: (String value) {
               if (value == 'logout') {
-                _logout(); // Log out when 'Logout' is selected
+                _logout();
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
                 value: 'logout',
-                height: 40, // Reduce the height of the menu item
+                height: 40,
                 child: Row(
                   children: [
                     Icon(Icons.logout, color: Colors.black),
@@ -435,7 +426,7 @@ class _AdminPageState extends State<AdminPage> {
                 ),
               ),
             ],
-            offset: const Offset(0, 50), // Offset to prevent covering the icon
+            offset: const Offset(0, 50),
           ),
         ],
       ),
@@ -461,22 +452,19 @@ class _AdminPageState extends State<AdminPage> {
                     body: Column(
                       children: [
                         TextField(
-                          controller:
-                              _firstNameController, // New first name field
+                          controller: _firstNameController,
                           decoration:
                               const InputDecoration(labelText: 'First Name'),
                         ),
                         const SizedBox(height: 10),
                         TextField(
-                          controller:
-                              _middleNameController, // New middle name field
+                          controller: _middleNameController,
                           decoration:
                               const InputDecoration(labelText: 'Middle Name'),
                         ),
                         const SizedBox(height: 10),
                         TextField(
-                          controller:
-                              _lastNameController, // New last name field
+                          controller: _lastNameController,
                           decoration:
                               const InputDecoration(labelText: 'Last Name'),
                         ),
@@ -536,9 +524,6 @@ class _AdminPageState extends State<AdminPage> {
                           onChanged: (String? newValue) {
                             setState(() {
                               _selectedUser = newValue;
-                              if (newValue != null) {
-                                _fetchOfficesForUser(newValue); // Fetch offices
-                              }
                             });
                           },
                           items: _users.map((user) {
@@ -598,20 +583,23 @@ class _AdminPageState extends State<AdminPage> {
                               .toList(),
                         ),
                         const SizedBox(height: 10),
-                        DropdownButton<String>(
-                          value: _selectedUser,
-                          hint: const Text(
-                              'Select a User to Assign Office and Room'),
-                          isExpanded: true,
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedUser = newValue;
-                            });
-                          },
-                          items: _users.map((user) {
-                            return DropdownMenuItem<String>(
-                              value: user['id'].toString(),
-                              child: Text(user['username']),
+                        Wrap(
+                          spacing: 8.0,
+                          children: _users.map((user) {
+                            return ChoiceChip(
+                              label: Text(user['username']),
+                              selected: _selectedUsers
+                                  .contains(user['id'].toString()),
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedUsers.add(user['id'].toString());
+                                  } else {
+                                    _selectedUsers
+                                        .remove(user['id'].toString());
+                                  }
+                                });
+                              },
                             );
                           }).toList(),
                         ),
@@ -655,7 +643,7 @@ class _AdminPageState extends State<AdminPage> {
                             : ElevatedButton(
                                 onPressed: _createOfficeAndRooms,
                                 child: const Text(
-                                    'Create Office, Rooms, and Assign to User'),
+                                    'Create Office, Rooms, and Assign to Users'),
                               ),
                       ],
                     ),
@@ -676,9 +664,6 @@ class _AdminPageState extends State<AdminPage> {
                           onChanged: (String? newValue) {
                             setState(() {
                               _selectedUser = newValue;
-                              if (newValue != null) {
-                                _fetchOfficesForUser(newValue); // Fetch offices
-                              }
                             });
                           },
                           items: _users.map((user) {
@@ -751,6 +736,63 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                     isExpanded: _isExpanded[3],
                   ),
+                  // New Expansion Panel: Assign Users to Office
+                  ExpansionPanel(
+                    headerBuilder: (context, isExpanded) {
+                      return const ListTile(
+                        title: Text('Assign Users to Office'),
+                      );
+                    },
+                    body: Column(
+                      children: [
+                        DropdownButton<String>(
+                          value: _selectedOffice,
+                          hint: const Text('Select Office'),
+                          isExpanded: true,
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              _selectedOffice = newValue;
+                            });
+                          },
+                          items: _offices.map((office) {
+                            return DropdownMenuItem<String>(
+                              value: office['id'].toString(),
+                              child: Text(office['name']),
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8.0,
+                          children: _users.map((user) {
+                            return ChoiceChip(
+                              label: Text(user['username']),
+                              selected: _selectedUsers
+                                  .contains(user['id'].toString()),
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedUsers.add(user['id'].toString());
+                                  } else {
+                                    _selectedUsers
+                                        .remove(user['id'].toString());
+                                  }
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                        const SizedBox(height: 10),
+                        _isLoading
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                onPressed: _assignUsersToOffice,
+                                child: const Text('Assign Users'),
+                              ),
+                      ],
+                    ),
+                    isExpanded: _isExpanded[4],
+                  ),
                 ],
               ),
             ],
@@ -758,5 +800,44 @@ class _AdminPageState extends State<AdminPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _assignUsersToOffice() async {
+    final officeId = _selectedOffice;
+    final selectedUserIds = _selectedUsers;
+
+    if (officeId == null || selectedUserIds.isEmpty) {
+      _showError('Please select an office and at least one user.');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://spaklean-app-prod.onrender.com/api/admin/assign_users_to_office'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'office_id': officeId,
+          'user_ids': selectedUserIds,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        _showSuccess('Users assigned to office successfully.');
+        _clearUserInput();
+      } else {
+        _showError('Failed to assign users to office.');
+      }
+    } catch (e) {
+      _showError('An error occurred while assigning users.');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 }

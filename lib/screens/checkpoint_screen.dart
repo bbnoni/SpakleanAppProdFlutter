@@ -223,9 +223,9 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     double? facilityScore;
 
     try {
-      // Properly encode the zone name and append office ID
+      // Properly encode the zone name and append office ID and user ID
       final zoneScoreUrl = Uri.encodeFull(
-        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score?office_id=${widget.officeId}',
+        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score?office_id=${widget.officeId}&user_id=${widget.userId}',
       );
       final zoneScoreResponse = await http.get(Uri.parse(zoneScoreUrl));
 
@@ -240,7 +240,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       }
 
       final facilityScoreUrl = Uri.encodeFull(
-        'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}',
+        'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.userId}',
       );
       final facilityScoreResponse = await http.get(Uri.parse(facilityScoreUrl));
 

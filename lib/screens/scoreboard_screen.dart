@@ -126,10 +126,11 @@ class ScoreboardScreen extends StatelessWidget {
               color: Colors.grey.withOpacity(0.2),
               spreadRadius: 2,
               blurRadius: 5,
-              offset: const Offset(0, 3), // changes position of shadow
+              offset: const Offset(0, 3), // Changes position of shadow
             ),
           ],
         ),
+        padding: const EdgeInsets.all(8.0), // Consistent padding inside tiles
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
