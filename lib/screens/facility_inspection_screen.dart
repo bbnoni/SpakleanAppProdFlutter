@@ -33,7 +33,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
 
   // Function to start the auto-refresh timer
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
       _fetchFacilityScore();
     });
   }

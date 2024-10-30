@@ -38,7 +38,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
 
   // Start auto-refresh to fetch score and rooms periodically
   void _startAutoRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
       _fetchZoneScore();
       _fetchRooms();
     });
