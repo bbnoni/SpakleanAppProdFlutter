@@ -125,6 +125,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
   }
 
   void _checkIfAttendanceTakenToday() {
+    // ignore: unused_local_variable
     final now = DateTime.now();
     if (checkOutTime != null) {
       setState(() {
@@ -200,6 +201,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
     location.changeSettings(accuracy: LocationAccuracy.high);
     locationData = await location.getLocation();
 
+    // ignore: unnecessary_null_comparison
     if (locationData != null) {
       setState(() {
         if (checkInTime == null) {

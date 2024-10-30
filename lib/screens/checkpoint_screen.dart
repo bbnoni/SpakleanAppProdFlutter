@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:location/location.dart'; // Import location package
+import 'package:location/location.dart';
 
 class CheckpointScreen extends StatefulWidget {
   final String roomId;
   final String roomName;
   final String userId;
   final String zoneName;
-  final String officeId; // Add officeId as a parameter
+  final String officeId;
 
   const CheckpointScreen({
     super.key,
@@ -18,7 +18,7 @@ class CheckpointScreen extends StatefulWidget {
     required this.roomName,
     required this.userId,
     required this.zoneName,
-    required this.officeId, // Make it required
+    required this.officeId,
   });
 
   @override
@@ -30,7 +30,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   DateTime? _submissionTime;
   double? latitude;
   double? longitude;
-  bool _isSubmitting = false; // To manage the loading state
+  String? locationName; // Store human-readable address
+  bool _isSubmitting = false;
 
   final Map<String, List<String>> defectOptions = {
     'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None', 'N/A'],
@@ -158,11 +159,34 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     // Get location data
     locationData = await location.getLocation();
 
-    // Set the location data
+    // Set the location data and fetch address
     setState(() {
       latitude = locationData?.latitude;
       longitude = locationData?.longitude;
     });
+    if (latitude != null && longitude != null) {
+      locationName = await reverseGeocode(latitude!, longitude!);
+    }
+  }
+
+  // Reverse geocode function to fetch human-readable address
+  Future<String> reverseGeocode(double latitude, double longitude) async {
+    const apiKey = 'c5eb7405643243c68191cd30f7fcdf36'; // Your OpenCage API key
+    final url =
+        'https://api.opencagedata.com/geocode/v1/json?q=$latitude+$longitude&key=$apiKey';
+
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['results'] != null && data['results'].isNotEmpty) {
+        return data['results'][0]['formatted'];
+      } else {
+        return "No location data available";
+      }
+    } else {
+      return "Failed to fetch location";
+    }
   }
 
   Map<String, double> _calculateAreaScores() {
@@ -262,14 +286,12 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       "longitude": longitude,
       "user_id": widget.userId,
       "room_id": widget.roomId,
-      "zone_name": widget.zoneName, // Include the zone name in the payload
-      "area_scores": areaScores, // Submit calculated area scores
-      "zone_score": zoneScore, // Include the fetched zone score (or null)
-      "facility_score":
-          facilityScore, // Include the fetched facility score (or null)
+      "zone_name": widget.zoneName,
+      "area_scores": areaScores,
+      "zone_score": zoneScore,
+      "facility_score": facilityScore,
     };
 
-    // Print the data to check
     print("Submitting data: $data");
 
     try {
@@ -288,7 +310,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       print("Error submitting task: $e");
     } finally {
       setState(() {
-        _isSubmitting = false; // Hide loading spinner
+        _isSubmitting = false;
       });
     }
   }
@@ -300,7 +322,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         return AlertDialog(
           title: const Text('Submission Summary'),
           content: Text(
-            'Room: ${widget.roomName}\nSubmission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\nLocation: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude' : 'Location not available'}\nArea Scores:\n${areaScores.entries.map((entry) => '${entry.key}: ${entry.value.toStringAsFixed(2)}%').join('\n')}',
+            'Room: ${widget.roomName}\nSubmission Time: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(_submissionTime!)}\nLocation: ${latitude != null && longitude != null ? 'Lat: $latitude, Long: $longitude - $locationName' : 'Location not available'}\nArea Scores:\n${areaScores.entries.map((entry) => '${entry.key}: ${entry.value.toStringAsFixed(2)}%').join('\n')}',
           ),
           actions: <Widget>[
             TextButton(
@@ -318,8 +340,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
 
   void _scrollToCategory(String category) {
     final targetIndex = defectOptions.keys.toList().indexOf(category);
-    final targetOffset =
-        targetIndex * 250.0; // Approximate offset for each category
+    final targetOffset = targetIndex * 250.0;
     _scrollController.animateTo(
       targetOffset,
       duration: const Duration(milliseconds: 500),
@@ -356,7 +377,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               buildCategory('SANITARY WARE', defectOptions['SANITARY WARE']!),
               const SizedBox(height: 20),
               _isSubmitting
-                  ? const CircularProgressIndicator() // Show spinner when submitting
+                  ? const CircularProgressIndicator()
                   : ElevatedButton(
                       onPressed: _submitDataToBackend,
                       style: ElevatedButton.styleFrom(
@@ -415,7 +436,6 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
               );
             }).toList(),
           ),
-          const SizedBox(height: 10),
           const Divider(thickness: 2.0, color: Colors.grey),
         ],
       ),
