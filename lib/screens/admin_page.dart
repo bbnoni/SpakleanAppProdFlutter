@@ -406,12 +406,18 @@ class _AdminPageState extends State<AdminPage> {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              // Fetch updated data when refresh button is pressed
+              _fetchUsers();
+              _fetchOffices();
+            },
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.account_circle, size: 30),
             onSelected: (String value) {
-              if (value == 'logout') {
-                _logout();
-              }
+              if (value == 'logout') _logout();
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
               const PopupMenuItem<String>(
@@ -421,7 +427,7 @@ class _AdminPageState extends State<AdminPage> {
                   children: [
                     Icon(Icons.logout, color: Colors.black),
                     SizedBox(width: 10),
-                    Text('Logout'),
+                    Text('Logout')
                   ],
                 ),
               ),

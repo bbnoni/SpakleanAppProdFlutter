@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // Import intl for date formatting
+import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
+
+import 'score_summary_screen.dart'; // Import the ScoreSummaryScreen
 
 class ReportScreen extends StatefulWidget {
   final String userId;
@@ -16,7 +18,7 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   List<dynamic> _tasks = [];
   bool _isLoading = false;
-  DateTime _selectedDate = DateTime.now(); // The selected date
+  DateTime _selectedDate = DateTime.now();
 
   @override
   void initState() {
@@ -33,15 +35,13 @@ class _ReportScreenState extends State<ReportScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-          'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/tasks',
-        ),
+            'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/tasks'),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           _tasks = data['tasks'];
-          // Log the fetched tasks for debugging
           print("Fetched Tasks: $_tasks");
         });
       } else {
@@ -57,13 +57,13 @@ class _ReportScreenState extends State<ReportScreen> {
     }
   }
 
-  // Show error
+  // Show error message
   void _showError(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // Helper method to get the color for each zone
+  // Helper method to get color for each zone
   Color _getZoneColor(String zoneName) {
     switch (zoneName) {
       case 'Low Traffic Areas (Yellow Zone)':
@@ -77,7 +77,7 @@ class _ReportScreenState extends State<ReportScreen> {
       case 'Outdoors & Exteriors (Black Zone)':
         return Colors.black;
       default:
-        return Colors.grey; // Default color if no match
+        return Colors.grey;
     }
   }
 
@@ -110,53 +110,41 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildTaskCard(Map<String, dynamic> task) {
     final zoneName = task['zone_name'] ?? 'N/A';
 
-    // Safely parse zone_score and facility_score to double if possible
-    final zoneScoreValue =
-        double.tryParse(task['zone_score']?.toString() ?? '');
-    final zoneScore = zoneScoreValue != null
-        ? '${zoneScoreValue.toStringAsFixed(2)}%'
+    final zoneScore = task['zone_score'] != null
+        ? '${double.tryParse(task['zone_score'].toString())?.toStringAsFixed(2)}%'
         : 'N/A';
 
-    final facilityScoreValue =
-        double.tryParse(task['facility_score']?.toString() ?? '');
-    final facilityScore = facilityScoreValue != null
-        ? '${facilityScoreValue.toStringAsFixed(2)}%'
+    final facilityScore = task['facility_score'] != null
+        ? '${double.tryParse(task['facility_score'].toString())?.toStringAsFixed(2)}%'
         : 'N/A';
-
-    // Log facility score for debugging
-    print("Facility Score for task: $facilityScore");
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Task Type: ${task['task_type']}',
-              style: const TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text('Task Type: ${task['task_type']}',
+                style: const TextStyle(
+                    fontSize: 18.0, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8.0),
             Text(
                 'Date: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.parse(task['date_submitted']))}'),
             Text('Room Score: ${task['room_score']?.toStringAsFixed(2)}%'),
             Text('Zone: $zoneName'),
-            Text('Zone Score: $zoneScore'), // Display zone score
-            Text('Facility Score: $facilityScore'), // Display facility score
+            Text('Zone Score: $zoneScore'),
+            Text('Facility Score: $facilityScore'),
             Text('Latitude: ${task['latitude']}'),
             Text('Longitude: ${task['longitude']}'),
             const SizedBox(height: 8.0),
             const Text('Area Scores:'),
-            ...task['area_scores'].entries.map((entry) {
-              return Text('${entry.key}: ${entry.value.toStringAsFixed(2)}%');
-            }).toList(),
+            ...task['area_scores']
+                .entries
+                .map((entry) =>
+                    Text('${entry.key}: ${entry.value.toStringAsFixed(2)}%'))
+                .toList(),
           ],
         ),
       ),
@@ -165,51 +153,53 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter tasks for the selected date
     final tasksForSelectedDate = _getTasksForSelectedDate();
-    // Group tasks by zone
     final groupedTasksByZone = _groupTasksByZone(tasksForSelectedDate);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inspection Reports'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.assessment),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ScoreSummaryScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // Calendar widget to select date
           TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _selectedDate,
-            selectedDayPredicate: (day) {
-              return isSameDay(_selectedDate, day);
-            },
+            selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
             onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDate = selectedDay; // Update selected date
-              });
+              setState(() => _selectedDate = selectedDay);
             },
             calendarFormat: CalendarFormat.month,
+            availableCalendarFormats: const {
+              CalendarFormat.month: 'Month',
+              CalendarFormat.week: 'Week', // Remove two weeks format
+            },
           ),
-
-          // Loading indicator
           if (_isLoading) const Center(child: CircularProgressIndicator()),
-
-          // Show tasks for the selected date
           if (!_isLoading && tasksForSelectedDate.isEmpty)
             const Center(child: Text('No tasks found for this date')),
-
           if (!_isLoading && tasksForSelectedDate.isNotEmpty)
             Expanded(
               child: ListView(
                 children: groupedTasksByZone.keys.map((zone) {
-                  // Get color for each zone
                   final zoneColor = _getZoneColor(zone);
                   return ExpansionTile(
-                    title: Text(
-                      zone,
-                      style: TextStyle(color: zoneColor),
-                    ),
+                    title: Text(zone, style: TextStyle(color: zoneColor)),
                     children: groupedTasksByZone[zone]!
                         .map((task) => _buildTaskCard(task))
                         .toList(),
