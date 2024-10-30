@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // Import intl for date formatting
-import 'package:location/location.dart'; // Import location package
+import 'package:intl/intl.dart';
+import 'package:location/location.dart';
 
 class CustodianAttendanceScreen extends StatefulWidget {
   final String userId;
@@ -29,6 +29,9 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
   double? checkOutLat;
   double? checkOutLong;
 
+  String? checkInLocationName;
+  String? checkOutLocationName;
+
   bool _isLoading = false;
   bool _isButtonDisabled = false;
 
@@ -37,26 +40,24 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this); // To observe app lifecycle
-    _fetchAttendanceStatus(); // Fetch attendance status when page loads
+    WidgetsBinding.instance.addObserver(this);
+    _fetchAttendanceStatus();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // Remove observer
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  // Listen to when the app is resumed to check status again
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _fetchAttendanceStatus(); // Re-fetch attendance when user returns
+      _fetchAttendanceStatus();
     }
     super.didChangeAppLifecycleState(state);
   }
 
-  // Fetch attendance status from DB (backend for specific user and office)
   Future<void> _fetchAttendanceStatus() async {
     setState(() {
       _isLoading = true;
@@ -70,9 +71,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
         setState(() {
-          // Handle multiple check-ins and check-outs
           _attendanceHistory =
               List<Map<String, dynamic>>.from(data['attendance_today'] ?? []);
           checkInTime = _attendanceHistory.isNotEmpty
@@ -98,10 +97,23 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
               ? _attendanceHistory.last['check_out_long']
               : null;
 
-          _checkIfAttendanceTakenToday(); // Re-check if button should be disabled
+          if (checkInLat != null && checkInLong != null) {
+            _updateLocationName(
+                isCheckIn: true,
+                latitude: checkInLat!,
+                longitude: checkInLong!);
+          }
+          if (checkOutLat != null && checkOutLong != null) {
+            _updateLocationName(
+                isCheckIn: false,
+                latitude: checkOutLat!,
+                longitude: checkOutLong!);
+          }
+
+          _checkIfAttendanceTakenToday();
         });
 
-        _fetchAttendanceHistory(); // Fetch full attendance history
+        _fetchAttendanceHistory();
       }
     } catch (e) {
       print("Error fetching attendance status: $e");
@@ -112,24 +124,19 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
     }
   }
 
-  // Check if the user has already taken attendance today
   void _checkIfAttendanceTakenToday() {
-    // ignore: unused_local_variable
     final now = DateTime.now();
-
-    // If check-out is completed, reset the state to allow another check-in
     if (checkOutTime != null) {
       setState(() {
         checkInTime = null;
         checkOutTime = null;
-        _isButtonDisabled = false; // Re-enable button for a new check-in
+        _isButtonDisabled = false;
       });
     } else {
-      _isButtonDisabled = false; // Allow multiple check-ins and check-outs
+      _isButtonDisabled = false;
     }
   }
 
-  // Fetch attendance history from the backend
   Future<void> _fetchAttendanceHistory() async {
     try {
       final response = await http.get(
@@ -139,12 +146,30 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        List<Map<String, dynamic>> historyData =
+            List<Map<String, dynamic>>.from(data['history']).reversed.toList();
 
-        // Set the attendance history in reverse order to show latest first
+        // Fetch readable addresses for each history record
+        for (var record in historyData) {
+          if (record['check_in_lat'] != null &&
+              record['check_in_long'] != null) {
+            record['check_in_location'] = await reverseGeocode(
+                record['check_in_lat'], record['check_in_long']);
+          } else {
+            record['check_in_location'] = "No address available";
+          }
+
+          if (record['check_out_lat'] != null &&
+              record['check_out_long'] != null) {
+            record['check_out_location'] = await reverseGeocode(
+                record['check_out_lat'], record['check_out_long']);
+          } else {
+            record['check_out_location'] = "No address available";
+          }
+        }
+
         setState(() {
-          _attendanceHistory = List<Map<String, dynamic>>.from(data['history'])
-              .reversed
-              .toList();
+          _attendanceHistory = historyData;
         });
       } else {
         print("Failed to load attendance history.");
@@ -154,52 +179,62 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
     }
   }
 
-  // Fetch dynamic location using the 'location' package
   Future<void> _fetchLocation() async {
     Location location = Location();
     bool serviceEnabled;
     PermissionStatus permissionGranted;
     LocationData? locationData;
 
-    // Check if location service is enabled
     serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
-        return; // If service not enabled, return early
-      }
+      if (!serviceEnabled) return;
     }
 
-    // Check for location permission
     permissionGranted = await location.hasPermission();
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return; // If permission denied, return early
-      }
+      if (permissionGranted != PermissionStatus.granted) return;
     }
 
-    // Set location accuracy to high
     location.changeSettings(accuracy: LocationAccuracy.high);
-
-    // Get location data
     locationData = await location.getLocation();
 
-    // Set the location data
+    if (locationData != null) {
+      setState(() {
+        if (checkInTime == null) {
+          checkInLat = locationData?.latitude;
+          checkInLong = locationData?.longitude;
+          checkInTime = DateTime.now();
+          _updateLocationName(
+              isCheckIn: true, latitude: checkInLat!, longitude: checkInLong!);
+        } else if (checkOutTime == null) {
+          checkOutLat = locationData?.latitude;
+          checkOutLong = locationData?.longitude;
+          checkOutTime = DateTime.now();
+          _updateLocationName(
+              isCheckIn: false,
+              latitude: checkOutLat!,
+              longitude: checkOutLong!);
+        }
+      });
+    }
+  }
+
+  Future<void> _updateLocationName(
+      {required bool isCheckIn,
+      required double latitude,
+      required double longitude}) async {
+    String locationName = await reverseGeocode(latitude, longitude);
     setState(() {
-      if (checkInTime == null) {
-        checkInLat = locationData?.latitude;
-        checkInLong = locationData?.longitude;
-        checkInTime = DateTime.now(); // Capture check-in time
-      } else if (checkOutTime == null) {
-        checkOutLat = locationData?.latitude;
-        checkOutLong = locationData?.longitude;
-        checkOutTime = DateTime.now(); // Capture check-out time
+      if (isCheckIn) {
+        checkInLocationName = locationName;
+      } else {
+        checkOutLocationName = locationName;
       }
     });
   }
 
-  // Submit attendance (check-in or check-out)
   Future<void> _submitAttendance({required bool isCheckIn}) async {
     setState(() {
       _isLoading = true;
@@ -233,14 +268,13 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
         );
         if (!isCheckIn) {
           setState(() {
-            // Reset state to allow a new check-in after check-out
             checkInTime = null;
             checkOutTime = null;
             _isButtonDisabled = false;
           });
         }
-        _fetchAttendanceStatus(); // Reload the attendance status after submitting
-        _fetchAttendanceHistory(); // Reload the attendance history after submitting
+        _fetchAttendanceStatus();
+        _fetchAttendanceHistory();
       } else {
         print("Failed to submit attendance: ${response.body}");
       }
@@ -253,13 +287,11 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
     }
   }
 
-  // Format DateTime using intl package
   String _formatDateTime(DateTime dateTime) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm:ss');
     return formatter.format(dateTime);
   }
 
-  // Display the attendance history
   Widget _buildAttendanceHistory() {
     if (_attendanceHistory.isEmpty) {
       return const Text("No attendance history available.");
@@ -270,13 +302,16 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
       separatorBuilder: (context, index) => const Divider(),
       itemBuilder: (context, index) {
         final record = _attendanceHistory[index];
+        final checkInAddress = record['check_in_location'] ?? "No address";
+        final checkOutAddress = record['check_out_location'] ?? "No address";
+
         return ListTile(
           title: Text(
               'Check-In: ${_formatDateTime(DateTime.parse(record['check_in_time']))} - '
               'Check-Out: ${record['check_out_time'] != null ? _formatDateTime(DateTime.parse(record['check_out_time'])) : "Not checked out"}'),
           subtitle: Text(
-              'Location: Check-In (${record['check_in_lat']}, ${record['check_in_long']})\n'
-              'Check-Out (${record['check_out_lat'] ?? "N/A"}, ${record['check_out_long'] ?? "N/A"})'),
+              'Location:\nCheck-In (${record['check_in_lat']}, ${record['check_in_long']}) - $checkInAddress\n'
+              'Check-Out (${record['check_out_lat'] ?? "N/A"}, ${record['check_out_long'] ?? "N/A"}) - $checkOutAddress'),
         );
       },
     );
@@ -288,20 +323,20 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
           ? null
           : checkInTime == null
               ? () async {
-                  await _fetchLocation(); // Fetch location before check-in
-                  await _submitAttendance(isCheckIn: true); // Check-in
+                  await _fetchLocation();
+                  await _submitAttendance(isCheckIn: true);
                 }
               : checkOutTime == null
                   ? () async {
-                      await _fetchLocation(); // Fetch location before check-out
-                      await _submitAttendance(isCheckIn: false); // Check-out
+                      await _fetchLocation();
+                      await _submitAttendance(isCheckIn: false);
                     }
                   : null,
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
         backgroundColor: _isButtonDisabled
             ? Colors.grey
-            : (checkInTime == null ? Colors.green : Colors.red), // Button color
+            : (checkInTime == null ? Colors.green : Colors.red),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       icon: _isButtonDisabled
@@ -344,7 +379,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   subtitle: Text(
-                      'Time: ${_formatDateTime(checkInTime!)}\nLocation: ($checkInLat, $checkInLong)'),
+                      'Time: ${_formatDateTime(checkInTime!)}\nLocation: ($checkInLat, $checkInLong) - $checkInLocationName'),
                 ),
               ),
             if (checkInTime != null) const SizedBox(height: 10),
@@ -362,7 +397,7 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   subtitle: checkOutTime != null
                       ? Text(
-                          'Time: ${_formatDateTime(checkOutTime!)}\nLocation: ($checkOutLat, $checkOutLong)')
+                          'Time: ${_formatDateTime(checkOutTime!)}\nLocation: ($checkOutLat, $checkOutLong) - $checkOutLocationName')
                       : const Text("No check-out data available"),
                 ),
               ),
@@ -381,5 +416,25 @@ class _CustodianAttendanceScreenState extends State<CustodianAttendanceScreen>
         ),
       ),
     );
+  }
+}
+
+// Reverse geocoding function
+Future<String> reverseGeocode(double latitude, double longitude) async {
+  const apiKey = 'c5eb7405643243c68191cd30f7fcdf36';
+  final url =
+      'https://api.opencagedata.com/geocode/v1/json?q=$latitude+$longitude&key=$apiKey';
+
+  final response = await http.get(Uri.parse(url));
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    if (data['results'] != null && data['results'].isNotEmpty) {
+      return data['results'][0]['formatted'];
+    } else {
+      return "No location data available";
+    }
+  } else {
+    return "Failed to fetch location";
   }
 }

@@ -1,44 +1,59 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'checkpoint_screen.dart'; // Import CheckpointScreen
+import 'checkpoint_screen.dart';
 
 class ZoneDetailScreen extends StatefulWidget {
   final String zone;
   final String userId;
-  final String officeId; // Add officeId parameter
+  final String officeId;
 
-  const ZoneDetailScreen(
-      {super.key,
-      required this.zone,
-      required this.userId,
-      required this.officeId}); // Pass both zone, userId, and officeId
+  const ZoneDetailScreen({
+    super.key,
+    required this.zone,
+    required this.userId,
+    required this.officeId,
+  });
 
   @override
   _ZoneDetailScreenState createState() => _ZoneDetailScreenState();
 }
 
 class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
-  List<dynamic> _rooms = []; // To store the fetched rooms
+  List<dynamic> _rooms = [];
   bool _isLoading = false;
-  double? _zoneScore; // Store zone score
+  double? _zoneScore;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
-    _fetchRooms(); // Fetch rooms when the screen loads
-    _fetchZoneScore(); // Fetch zone score when the screen loads
+    _fetchRooms();
+    _fetchZoneScore();
+    _startAutoRefresh(); // Start auto-refresh
   }
 
-  // Fetch the zone score and store it in the state
+  // Start auto-refresh to fetch score and rooms periodically
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _fetchZoneScore();
+      _fetchRooms();
+    });
+  }
+
+  // Cancel timer when the widget is disposed to prevent memory leaks
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _fetchZoneScore() async {
     try {
-      // Properly encode the zone name before sending the request
       final encodedZone = Uri.encodeComponent(widget.zone);
-
-      // Append officeId and userId as query parameters to make the zone score unique to each individual
       final response = await http.get(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}&user_id=${widget.userId}'),
@@ -47,7 +62,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          // Check if the zone score is "N/A" and handle it appropriately
           _zoneScore = data['zone_score'] == "N/A" ? null : data['zone_score'];
         });
       } else {
@@ -58,17 +72,13 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     }
   }
 
-  // Fetch rooms for the specific zone, userId, and officeId
   Future<void> _fetchRooms() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Properly encode the zone name before sending the request
       final encodedZone = Uri.encodeComponent(widget.zone);
-
-      // Append officeId and userId as query parameters to fetch rooms specific to that user and office
       final response = await http.get(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/users/${widget.userId}/offices/${widget.officeId}/rooms/$encodedZone'),
@@ -77,7 +87,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          _rooms = data['rooms']; // Store the fetched rooms
+          _rooms = data['rooms'];
         });
       } else {
         _showError('Failed to load rooms for this zone');
@@ -91,7 +101,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     }
   }
 
-  // Get background color based on zone type
   Color _getZoneColor(String zone) {
     switch (zone) {
       case 'Low Traffic Areas (Yellow Zone)':
@@ -107,11 +116,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
       case 'Inspection Reports':
         return Colors.white;
       default:
-        return Colors.grey; // Default if no match
+        return Colors.grey;
     }
   }
 
-  // Get text color based on zone background for better contrast
   Color _getTextColor(String zone) {
     if (zone == 'Outdoors & Exteriors (Black Zone)' ||
         zone == 'Inspection Reports') {
@@ -121,13 +129,11 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     }
   }
 
-  // Show an error message
   void _showError(String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // Create a room by sending a POST request to the backend
   Future<void> createRoom(
       String roomName, String zone, String userId, String officeId) async {
     final response = await http.post(
@@ -137,13 +143,12 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
         "name": roomName,
         "zone": zone,
         "office_id": officeId,
-        "user_id": userId // Ensure to send the user ID
+        "user_id": userId
       }),
     );
 
     if (response.statusCode == 201) {
       print('Room created successfully');
-      // Optionally refresh the rooms list after creating a room
       _fetchRooms();
     } else {
       print('Failed to create room: ${response.body}');
@@ -154,11 +159,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.zone), // Display the zone name in the title
+        title: Text(widget.zone),
       ),
       body: Column(
         children: [
-          // Display zone score if available or "N/A" if null
           if (_zoneScore != null)
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -234,7 +238,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
                                 onTap: () {
-                                  // Navigate to CheckpointScreen when a room is tapped
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(

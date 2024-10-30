@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -19,23 +20,36 @@ class FacilityInspectionScreen extends StatefulWidget {
 }
 
 class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
-  double? _facilityScore; // Store facility score
-  bool _isLoading = false; // Loading indicator for fetching the score
+  double? _facilityScore;
+  bool _isLoading = false;
+  Timer? _refreshTimer; // Timer to periodically refresh score
 
   @override
   void initState() {
     super.initState();
-    _fetchFacilityScore(); // Fetch facility score when the screen loads
+    _fetchFacilityScore();
+    _startAutoRefresh(); // Start auto-refresh on screen load
+  }
+
+  // Function to start the auto-refresh timer
+  void _startAutoRefresh() {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _fetchFacilityScore();
+    });
+  }
+
+  // Dispose the timer when the widget is disposed
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   // Fetch facility score for the selected office and user
   Future<void> _fetchFacilityScore() async {
-    setState(() {
-      _isLoading = true; // Show loading indicator
-    });
+    setState(() => _isLoading = true);
 
     try {
-      // Add userId as a query parameter to ensure score is fetched for the specific user
       final response = await http.get(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.userId}'),
@@ -44,10 +58,6 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          // Log the fetched data for debugging
-          print('Fetched Facility Score Data: $data');
-
-          // Set facility score or N/A if no score is available
           _facilityScore = data['total_facility_score'] != "N/A"
               ? data['total_facility_score']
               : null;
@@ -59,9 +69,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
     } catch (e) {
       print('Error fetching facility score: $e');
     } finally {
-      setState(() {
-        _isLoading = false; // Hide loading indicator
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -75,11 +83,9 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: <Widget>[
-            // Display loading indicator while fetching the score
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
             else
-              // Display facility score at the top if available, otherwise show N/A
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Text(
@@ -141,7 +147,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
                     Colors.white,
                     Icons.report,
                     textColor: Colors.black,
-                    userId: widget.userId, // Pass userId to ReportScreen
+                    userId: widget.userId,
                   ),
                 ],
               ),
@@ -168,7 +174,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
             builder: (context) => ZoneDetailScreen(
               zone: zone,
               userId: widget.userId,
-              officeId: widget.officeId, // Pass officeId to ZoneDetailScreen
+              officeId: widget.officeId,
             ),
           ),
         );
