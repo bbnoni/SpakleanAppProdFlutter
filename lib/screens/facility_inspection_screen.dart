@@ -45,14 +45,15 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
     super.dispose();
   }
 
-  // Fetch facility score for the selected office and user
+  // Fetch facility score for the selected office and user with month and year filtering
   Future<void> _fetchFacilityScore() async {
     setState(() => _isLoading = true);
 
     try {
+      final currentDate = DateTime.now();
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.userId}'),
+            'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.userId}&month=${currentDate.month}&year=${currentDate.year}'),
       );
 
       if (response.statusCode == 200) {

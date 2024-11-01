@@ -27,6 +27,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   bool _isLoading = false;
   double? _zoneScore;
   Timer? _refreshTimer;
+  DateTime? _lastFetchedMonth;
 
   @override
   void initState() {
@@ -54,9 +55,19 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   Future<void> _fetchZoneScore() async {
     try {
       final encodedZone = Uri.encodeComponent(widget.zone);
+      final currentDate = DateTime.now();
+      final isNewMonth = _lastFetchedMonth == null ||
+          (_lastFetchedMonth!.year != currentDate.year ||
+              _lastFetchedMonth!.month != currentDate.month);
+
+      if (isNewMonth) {
+        _lastFetchedMonth = currentDate;
+      }
+
+      // Fetch scores for the current month
       final response = await http.get(
         Uri.parse(
-            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}&user_id=${widget.userId}'),
+            'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}&user_id=${widget.userId}&month=${currentDate.month}&year=${currentDate.year}'),
       );
 
       if (response.statusCode == 200) {
@@ -167,7 +178,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Zone Score: ${_zoneScore!.toStringAsFixed(2)}%',
+                'Zone Score for ${DateTime.now().month}/${DateTime.now().year}: ${_zoneScore!.toStringAsFixed(2)}%',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
