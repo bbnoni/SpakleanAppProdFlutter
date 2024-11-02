@@ -251,9 +251,8 @@ class _AdminPageState extends State<AdminPage> {
         _selectedUsers; // Ensure multiple users are selected
 
     if (officeName.isEmpty ||
-        _addedRooms.isEmpty ||
         selectedUserIds.isEmpty ||
-        zone == null ||
+        //zone == null ||
         sector == null) {
       _showError('Please enter all required fields.');
       return;
@@ -560,7 +559,7 @@ class _AdminPageState extends State<AdminPage> {
                   ExpansionPanel(
                     headerBuilder: (context, isExpanded) {
                       return const ListTile(
-                        title: Text('Create Office and Room'),
+                        title: Text('Create Office'),
                       );
                     },
                     body: Column(
@@ -570,17 +569,17 @@ class _AdminPageState extends State<AdminPage> {
                           decoration: const InputDecoration(
                               labelText: 'Create New Office'),
                         ),
-                        const SizedBox(height: 10),
-                        TextField(
-                          controller: _roomController,
-                          decoration: const InputDecoration(
-                              labelText: 'Create New Room'),
-                        ),
-                        const SizedBox(height: 10),
-                        ElevatedButton(
-                          onPressed: _addRoom,
-                          child: const Text('Add Room'),
-                        ),
+                        // const SizedBox(height: 10),
+                        // TextField(
+                        //   controller: _roomController,
+                        //   decoration: const InputDecoration(
+                        //       labelText: 'Create New Room'),
+                        // ),
+                        // const SizedBox(height: 10),
+                        // ElevatedButton(
+                        //   onPressed: _addRoom,
+                        //   child: const Text('Add Office'),
+                        // ),
                         const SizedBox(height: 10),
                         Wrap(
                           spacing: 8.0,
@@ -609,23 +608,23 @@ class _AdminPageState extends State<AdminPage> {
                             );
                           }).toList(),
                         ),
-                        const SizedBox(height: 10),
-                        DropdownButton<String>(
-                          value: _selectedZone,
-                          hint: const Text('Select a Zone'),
-                          isExpanded: true,
-                          onChanged: (String? newValue) {
-                            setState(() {
-                              _selectedZone = newValue;
-                            });
-                          },
-                          items: _zones.map((zone) {
-                            return DropdownMenuItem<String>(
-                              value: zone,
-                              child: Text(zone),
-                            );
-                          }).toList(),
-                        ),
+                        // const SizedBox(height: 10),
+                        // DropdownButton<String>(
+                        //   value: _selectedZone,
+                        //   hint: const Text('Select a Zone'),
+                        //   isExpanded: true,
+                        //   onChanged: (String? newValue) {
+                        //     setState(() {
+                        //       _selectedZone = newValue;
+                        //     });
+                        //   },
+                        //   items: _zones.map((zone) {
+                        //     return DropdownMenuItem<String>(
+                        //       value: zone,
+                        //       child: Text(zone),
+                        //     );
+                        //   }).toList(),
+                        // ),
                         const SizedBox(height: 10),
                         DropdownButton<String>(
                           value: _selectedSector, // Add sector dropdown
@@ -649,7 +648,7 @@ class _AdminPageState extends State<AdminPage> {
                             : ElevatedButton(
                                 onPressed: _createOfficeAndRooms,
                                 child: const Text(
-                                    'Create Office, Rooms, and Assign to Users'),
+                                    'Create Office and Assign to Users'),
                               ),
                       ],
                     ),
