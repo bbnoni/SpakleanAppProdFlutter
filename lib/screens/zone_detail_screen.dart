@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // Added for date formatting
 
 import 'checkpoint_screen.dart';
 
@@ -24,7 +25,6 @@ class ZoneDetailScreen extends StatefulWidget {
 
 class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   List<dynamic> _rooms = [];
-  bool _isLoading = false;
   double? _zoneScore;
   Timer? _refreshTimer;
   DateTime? _lastFetchedMonth;
@@ -37,7 +37,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     _startAutoRefresh(); // Start auto-refresh
   }
 
-  // Start auto-refresh to fetch score and rooms periodically
   void _startAutoRefresh() {
     _refreshTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
       _fetchZoneScore();
@@ -45,7 +44,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     });
   }
 
-  // Cancel timer when the widget is disposed to prevent memory leaks
   @override
   void dispose() {
     _refreshTimer?.cancel();
@@ -64,7 +62,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
         _lastFetchedMonth = currentDate;
       }
 
-      // Fetch scores for the current month
       final response = await http.get(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/zones/$encodedZone/score?office_id=${widget.officeId}&user_id=${widget.userId}&month=${currentDate.month}&year=${currentDate.year}'),
@@ -84,10 +81,6 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   }
 
   Future<void> _fetchRooms() async {
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       final encodedZone = Uri.encodeComponent(widget.zone);
       final response = await http.get(
@@ -101,14 +94,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
           _rooms = data['rooms'];
         });
       } else {
-        _showError('Failed to load rooms for this zone');
+        _showError('No loaded rooms for this zone');
       }
     } catch (e) {
       _showError('An error occurred while fetching rooms');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -168,6 +157,8 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final formattedDate = DateFormat("MMM. ''yy").format(DateTime.now());
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.zone),
@@ -178,7 +169,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Zone Score for ${DateTime.now().month}/${DateTime.now().year}: ${_zoneScore!.toStringAsFixed(2)}%',
+                'Zone Score for $formattedDate: ${_zoneScore!.toStringAsFixed(2)}%',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -199,74 +190,72 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
               ),
             ),
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _rooms.isEmpty
-                    ? const Center(child: Text('No rooms found for this zone'))
-                    : ListView.builder(
-                        itemCount: _rooms.length,
-                        itemBuilder: (context, index) {
-                          final zoneColor = _getZoneColor(widget.zone);
-                          final textColor = _getTextColor(widget.zone);
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16.0, vertical: 8.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: zoneColor.withOpacity(0.85),
-                                borderRadius: BorderRadius.circular(12.0),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withOpacity(0.4),
-                                    blurRadius: 6.0,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
+            child: _rooms.isEmpty
+                ? const Center(child: Text('No rooms found for this zone'))
+                : ListView.builder(
+                    itemCount: _rooms.length,
+                    itemBuilder: (context, index) {
+                      final zoneColor = _getZoneColor(widget.zone);
+                      final textColor = _getTextColor(widget.zone);
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0, vertical: 8.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: zoneColor.withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(12.0),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.4),
+                                blurRadius: 6.0,
+                                offset: const Offset(0, 4),
                               ),
-                              child: ListTile(
-                                title: Text(
-                                  _rooms[index]['name'],
-                                  style: TextStyle(
-                                    fontSize: 18.0,
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
-                                ),
-                                subtitle: Text(
-                                  'Zone: ${_rooms[index]['zone']}',
-                                  style: TextStyle(
-                                    fontSize: 14.0,
-                                    color: textColor.withOpacity(0.7),
-                                  ),
-                                ),
-                                trailing: Icon(
-                                  Icons.arrow_forward_ios,
-                                  color: textColor,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0, vertical: 8.0),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CheckpointScreen(
-                                        roomId: _rooms[index]['id'].toString(),
-                                        roomName: _rooms[index]['name'],
-                                        userId: widget.userId,
-                                        zoneName: widget.zone,
-                                        officeId: widget.officeId,
-                                      ),
-                                    ),
-                                  );
-                                },
+                            ],
+                          ),
+                          child: ListTile(
+                            title: Text(
+                              _rooms[index]['name'],
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
                               ),
                             ),
-                          );
-                        },
-                      ),
+                            subtitle: Text(
+                              'Zone: ${_rooms[index]['zone']}',
+                              style: TextStyle(
+                                fontSize: 14.0,
+                                color: textColor.withOpacity(0.7),
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.arrow_forward_ios,
+                              color: textColor,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 8.0),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CheckpointScreen(
+                                    roomId: _rooms[index]['id'].toString(),
+                                    roomName: _rooms[index]['name'],
+                                    userId: widget.userId,
+                                    zoneName: widget.zone,
+                                    officeId: widget.officeId,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

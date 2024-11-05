@@ -4,12 +4,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'report_screen.dart'; // Import ReportScreen
+import 'report_screen.dart';
 import 'zone_detail_screen.dart';
 
 class FacilityInspectionScreen extends StatefulWidget {
-  final String userId; // Add userId as a parameter
-  final String officeId; // Add officeId as a parameter
+  final String userId;
+  final String officeId;
 
   const FacilityInspectionScreen(
       {super.key, required this.userId, required this.officeId});
@@ -21,34 +21,28 @@ class FacilityInspectionScreen extends StatefulWidget {
 
 class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
   double? _facilityScore;
-  bool _isLoading = false;
-  Timer? _refreshTimer; // Timer to periodically refresh score
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _fetchFacilityScore();
-    _startAutoRefresh(); // Start auto-refresh on screen load
+    _startAutoRefresh();
   }
 
-  // Function to start the auto-refresh timer
   void _startAutoRefresh() {
     _refreshTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
       _fetchFacilityScore();
     });
   }
 
-  // Dispose the timer when the widget is disposed
   @override
   void dispose() {
     _refreshTimer?.cancel();
     super.dispose();
   }
 
-  // Fetch facility score for the selected office and user with month and year filtering
   Future<void> _fetchFacilityScore() async {
-    setState(() => _isLoading = true);
-
     try {
       final currentDate = DateTime.now();
       final response = await http.get(
@@ -69,8 +63,6 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
       }
     } catch (e) {
       print('Error fetching facility score: $e');
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -84,22 +76,19 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: <Widget>[
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator())
-            else
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  _facilityScore != null
-                      ? 'Total Facility Score: ${_facilityScore!.toStringAsFixed(2)}%'
-                      : 'Total Facility Score: N/A',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                _facilityScore != null
+                    ? 'Total Facility Score: ${_facilityScore!.toStringAsFixed(2)}%'
+                    : 'Total Facility Score: N/A',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                 ),
               ),
+            ),
             Expanded(
               child: GridView.count(
                 crossAxisCount: 2,
