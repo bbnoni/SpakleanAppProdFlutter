@@ -160,10 +160,13 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     locationData = await location.getLocation();
 
     // Set the location data and fetch address
-    setState(() {
-      latitude = locationData?.latitude;
-      longitude = locationData?.longitude;
-    });
+    if (mounted) {
+      // Ensure widget is still mounted
+      setState(() {
+        latitude = locationData?.latitude;
+        longitude = locationData?.longitude;
+      });
+    }
     if (latitude != null && longitude != null) {
       locationName = await reverseGeocode(latitude!, longitude!);
     }
@@ -218,6 +221,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   }
 
   Future<void> _submitDataToBackend() async {
+    if (!mounted) return; // Ensure widget is still mounted
+
     setState(() {
       _isSubmitting = true; // Show loading spinner
     });
@@ -309,9 +314,12 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     } catch (e) {
       print("Error submitting task: $e");
     } finally {
-      setState(() {
-        _isSubmitting = false;
-      });
+      if (mounted) {
+        // Ensure widget is still mounted
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 

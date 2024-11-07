@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // Added for date formatting
+import 'package:intl/intl.dart';
 
 import 'checkpoint_screen.dart';
 
@@ -69,9 +69,12 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          _zoneScore = data['zone_score'] == "N/A" ? null : data['zone_score'];
-        });
+        if (mounted) {
+          setState(() {
+            _zoneScore =
+                data['zone_score'] == "N/A" ? null : data['zone_score'];
+          });
+        }
       } else {
         print('Failed to load zone score');
       }
@@ -90,9 +93,11 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        setState(() {
-          _rooms = data['rooms'];
-        });
+        if (mounted) {
+          setState(() {
+            _rooms = data['rooms'];
+          });
+        }
       } else {
         _showError('No loaded rooms for this zone');
       }
@@ -130,8 +135,10 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    if (mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   Future<void> createRoom(
