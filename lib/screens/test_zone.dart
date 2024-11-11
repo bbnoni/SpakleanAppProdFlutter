@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Add secure storage for token
 import 'package:http/http.dart' as http;
@@ -28,8 +27,7 @@ class _AdminPageState extends State<AdminPage> {
   final _officeController = TextEditingController();
   final _roomController = TextEditingController();
   final List<String> _addedRooms = [];
-  List<String> _selectedUsers = []; // Now support multiple selected users
-  List<String> _selectedUsersForOfficeAssignment = [];
+  final List<String> _selectedUsers = []; // Now support multiple selected users
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
   String? _selectedOffice; // Currently selected office for room assignment
@@ -248,12 +246,14 @@ class _AdminPageState extends State<AdminPage> {
   Future<void> _createOfficeAndRooms() async {
     final officeName = _officeController.text;
     final zone = _selectedZone;
-    final sector = _selectedSector;
+    final sector = _selectedSector; // Add sector to the request
     final selectedUserIds =
-        _selectedUsers; // This is specific to the Create Office section
+        _selectedUsers; // Ensure multiple users are selected
 
-    // Validation for required fields
-    if (officeName.isEmpty || selectedUserIds.isEmpty || sector == null) {
+    if (officeName.isEmpty ||
+        selectedUserIds.isEmpty ||
+        //zone == null ||
+        sector == null) {
       _showError('Please enter all required fields.');
       return;
     }
@@ -263,7 +263,6 @@ class _AdminPageState extends State<AdminPage> {
     });
 
     try {
-      // API call to create an office and assign users and rooms
       final response = await http.post(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/admin/create_office_and_room'),
@@ -271,24 +270,19 @@ class _AdminPageState extends State<AdminPage> {
         body: jsonEncode({
           'office_name': officeName,
           'room_names': _addedRooms,
-          'user_ids': selectedUserIds,
+          'user_ids': selectedUserIds, // Include the list of user IDs
           'zone': zone,
-          'sector': sector,
+          'sector': sector // Include sector in the request
         }),
       );
 
       if (response.statusCode == 201) {
-        // Success: Notify the user and clear the selection
         _showSuccess('Office and rooms created and assigned successfully.');
-        _selectedUsers
-            .clear(); // Clear only the selected users for Create Office
-        _clearOfficeAndRoomInput(); // Clear the office and room inputs
+        _clearOfficeAndRoomInput();
       } else {
-        // Handle failure
         _showError('Failed to create office and rooms.');
       }
     } catch (e) {
-      // Handle any error during the API call
       _showError('An error occurred while creating the office and rooms.');
     } finally {
       setState(() {
@@ -594,43 +588,26 @@ class _AdminPageState extends State<AdminPage> {
                               .toList(),
                         ),
                         const SizedBox(height: 10),
-                        DropdownSearch<String>.multiSelection(
-                          items: _users
-                              .map((user) => user['username'].toString())
-                              .toList(),
-                          selectedItems: _selectedUsers.map((id) {
-                            return _users
-                                .firstWhere((user) =>
-                                    user['id'].toString() == id)['username']
-                                .toString();
+                        Wrap(
+                          spacing: 8.0,
+                          children: _users.map((user) {
+                            return ChoiceChip(
+                              label: Text(user['username']),
+                              selected: _selectedUsers
+                                  .contains(user['id'].toString()),
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedUsers.add(user['id'].toString());
+                                  } else {
+                                    _selectedUsers
+                                        .remove(user['id'].toString());
+                                  }
+                                });
+                              },
+                            );
                           }).toList(),
-                          onChanged: (List<String> selectedUsernames) {
-                            setState(() {
-                              _selectedUsers
-                                ..clear()
-                                ..addAll(selectedUsernames.map((username) {
-                                  return _users
-                                      .firstWhere((user) =>
-                                          user['username'] == username)['id']
-                                      .toString();
-                                }));
-                            });
-                          },
-                          dropdownDecoratorProps: DropDownDecoratorProps(
-                            dropdownSearchDecoration: InputDecoration(
-                              labelText: "Select Users to Assign",
-                              hintText: "Search and select users",
-                            ),
-                          ),
-                          popupProps: PopupPropsMultiSelection.menu(
-                            showSearchBox: true,
-                            searchFieldProps: TextFieldProps(
-                              decoration:
-                                  InputDecoration(labelText: "Search Users"),
-                            ),
-                          ),
                         ),
-
                         // const SizedBox(height: 10),
                         // DropdownButton<String>(
                         //   value: _selectedZone,
@@ -790,42 +767,25 @@ class _AdminPageState extends State<AdminPage> {
                           }).toList(),
                         ),
                         const SizedBox(height: 10),
-                        DropdownSearch<String>.multiSelection(
-                          items: _users
-                              .map((user) => user['username'].toString())
-                              .toList(),
-                          selectedItems:
-                              _selectedUsersForOfficeAssignment.map((id) {
-                            return _users
-                                .firstWhere((user) =>
-                                    user['id'].toString() == id)['username']
-                                .toString();
+                        Wrap(
+                          spacing: 8.0,
+                          children: _users.map((user) {
+                            return ChoiceChip(
+                              label: Text(user['username']),
+                              selected: _selectedUsers
+                                  .contains(user['id'].toString()),
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  if (selected) {
+                                    _selectedUsers.add(user['id'].toString());
+                                  } else {
+                                    _selectedUsers
+                                        .remove(user['id'].toString());
+                                  }
+                                });
+                              },
+                            );
                           }).toList(),
-                          onChanged: (List<String> selectedUsernames) {
-                            setState(() {
-                              _selectedUsersForOfficeAssignment
-                                ..clear()
-                                ..addAll(selectedUsernames.map((username) {
-                                  return _users
-                                      .firstWhere((user) =>
-                                          user['username'] == username)['id']
-                                      .toString();
-                                }));
-                            });
-                          },
-                          dropdownDecoratorProps: DropDownDecoratorProps(
-                            dropdownSearchDecoration: InputDecoration(
-                              labelText: "Select Users to Assign",
-                              hintText: "Search and select users",
-                            ),
-                          ),
-                          popupProps: PopupPropsMultiSelection.menu(
-                            showSearchBox: true,
-                            searchFieldProps: TextFieldProps(
-                              decoration:
-                                  InputDecoration(labelText: "Search Users"),
-                            ),
-                          ),
                         ),
                         const SizedBox(height: 10),
                         _isLoading
@@ -849,7 +809,7 @@ class _AdminPageState extends State<AdminPage> {
 
   Future<void> _assignUsersToOffice() async {
     final officeId = _selectedOffice;
-    final selectedUserIds = _selectedUsersForOfficeAssignment;
+    final selectedUserIds = _selectedUsers;
 
     if (officeId == null || selectedUserIds.isEmpty) {
       _showError('Please select an office and at least one user.');
@@ -873,8 +833,7 @@ class _AdminPageState extends State<AdminPage> {
 
       if (response.statusCode == 200) {
         _showSuccess('Users assigned to office successfully.');
-        _selectedUsersForOfficeAssignment
-            .clear(); // Clear only the selected users for Assign Users to Office
+        _clearUserInput();
       } else {
         _showError('Failed to assign users to office.');
       }
