@@ -685,58 +685,118 @@ class _AdminPageState extends State<AdminPage> {
                     },
                     body: Column(
                       children: [
-                        DropdownButton<String>(
-                          value: _selectedUser,
-                          hint: const Text('Select a User to Add Rooms'),
-                          isExpanded: true,
-                          onChanged: (String? newValue) {
+                        // Select a user to add rooms
+                        DropdownSearch<String>(
+                          items: _users
+                              .map((user) => user['username'].toString())
+                              .toList(),
+                          selectedItem: _selectedUser != null
+                              ? _users
+                                  .firstWhere((user) =>
+                                      user['id'].toString() ==
+                                      _selectedUser)['username']
+                                  .toString()
+                              : null,
+                          onChanged: (String? username) {
                             setState(() {
-                              _selectedUser = newValue;
+                              _selectedUser = _users
+                                  .firstWhere((user) =>
+                                      user['username'] == username)['id']
+                                  .toString();
                             });
                           },
-                          items: _users.map((user) {
-                            return DropdownMenuItem<String>(
-                              value: user['id'].toString(),
-                              child: Text(user['username']),
-                            );
-                          }).toList(),
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              labelText: "Select a User to Add Rooms",
+                              hintText: "Search and select a user",
+                            ),
+                          ),
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            searchFieldProps: TextFieldProps(
+                              decoration:
+                                  InputDecoration(labelText: "Search User"),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 10),
-                        DropdownButton<String>(
-                          value: _selectedOffice,
-                          hint: const Text('Select Office for Room Assignment'),
-                          isExpanded: true,
-                          onChanged: (String? newValue) {
+
+                        // Select an office for room assignment
+                        DropdownSearch<String>(
+                          items: _offices
+                              .map((office) => office['name'].toString())
+                              .toList(),
+                          selectedItem: _selectedOffice != null
+                              ? _offices
+                                  .firstWhere((office) =>
+                                      office['id'].toString() ==
+                                      _selectedOffice)['name']
+                                  .toString()
+                              : null,
+                          onChanged: (String? officeName) {
                             setState(() {
-                              _selectedOffice = newValue;
+                              _selectedOffice = _offices
+                                  .firstWhere((office) =>
+                                      office['name'] == officeName)['id']
+                                  .toString();
                             });
                           },
-                          items: _offices.map((office) {
-                            return DropdownMenuItem<String>(
-                              value: office['id'].toString(),
-                              child: Text(office['name']),
-                            );
-                          }).toList(),
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              labelText: "Select Office for Room Assignment",
+                              hintText: "Search and select an office",
+                            ),
+                          ),
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            searchFieldProps: TextFieldProps(
+                              decoration:
+                                  InputDecoration(labelText: "Search Office"),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 10),
+
+                        // Add a new room text field
                         TextField(
                           controller: _roomController,
                           decoration:
                               const InputDecoration(labelText: 'Add New Room'),
                         ),
                         const SizedBox(height: 10),
+
+                        // Button to add the room
                         ElevatedButton(
-                          onPressed: _addRoom,
+                          onPressed: () {
+                            final room = _roomController.text;
+                            if (room.isNotEmpty) {
+                              setState(() {
+                                _addedRooms.add(room);
+                                _roomController.clear();
+                              });
+                            }
+                          },
                           child: const Text('Add Room'),
                         ),
                         const SizedBox(height: 10),
+
+                        // Display added rooms as chips with delete option
                         Wrap(
                           spacing: 8.0,
-                          children: _addedRooms
-                              .map((room) => Chip(label: Text(room)))
-                              .toList(),
+                          children: _addedRooms.map((room) {
+                            return Chip(
+                              label: Text(room),
+                              onDeleted: () {
+                                setState(() {
+                                  _addedRooms.remove(room);
+                                });
+                              },
+                            );
+                          }).toList(),
                         ),
                         const SizedBox(height: 10),
+
+                        // Dropdown for selecting a zone (if needed)
                         DropdownButton<String>(
                           value: _selectedZone,
                           hint: const Text('Select a Zone'),
@@ -754,6 +814,8 @@ class _AdminPageState extends State<AdminPage> {
                           }).toList(),
                         ),
                         const SizedBox(height: 10),
+
+                        // Button to submit the added rooms
                         _isLoading
                             ? const CircularProgressIndicator()
                             : ElevatedButton(
@@ -764,6 +826,7 @@ class _AdminPageState extends State<AdminPage> {
                     ),
                     isExpanded: _isExpanded[3],
                   ),
+
                   // New Expansion Panel: Assign Users to Office
                   ExpansionPanel(
                     headerBuilder: (context, isExpanded) {
