@@ -48,7 +48,7 @@ class _OfficeScreenState extends State<OfficeScreen> {
         _showError('Failed to load assigned offices');
       }
     } catch (e) {
-      _showError('An error occurred while fetching offices');
+      _showError('No assigned offices');
     } finally {
       setState(() {
         _isLoading = false;

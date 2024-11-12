@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // Secure storage import
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
@@ -11,6 +12,10 @@ class CheckpointScreen extends StatefulWidget {
   final String userId;
   final String zoneName;
   final String officeId;
+  final String
+      currentUserId; // The ID of the logged-in user performing the inspection
+  final String?
+      doneOnBehalfUserId; // The ID of the selected user for whom the inspection is done
 
   const CheckpointScreen({
     super.key,
@@ -19,6 +24,8 @@ class CheckpointScreen extends StatefulWidget {
     required this.userId,
     required this.zoneName,
     required this.officeId,
+    required this.currentUserId,
+    required this.doneOnBehalfUserId,
   });
 
   @override
@@ -30,13 +37,15 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   DateTime? _submissionTime;
   double? latitude;
   double? longitude;
-  String? locationName; // Store human-readable address
+  String? locationName;
   bool _isSubmitting = false;
+  final _storage = FlutterSecureStorage(); // Secure storage instance
+  String? currentUserId; // Store the current user ID from secure storage
 
   final Map<String, List<String>> defectOptions = {
     'CEILING': ['Cobweb', 'Dust', 'Mold', 'Stains', 'None', 'N/A'],
     'WALLS': ['Cobweb', 'Dust', 'Marks', 'Mold', 'Stains', 'None', 'N/A'],
-    'CTP': ['Dust', 'Marks', 'None', 'N/A'],
+    'Common Touch Points (CTP)': ['Dust', 'Marks', 'None', 'N/A'],
     'WINDOWS': [
       'Cobweb',
       'Droppings',
@@ -123,45 +132,45 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   void initState() {
     super.initState();
     selections = defectOptions.map((key, value) => MapEntry(key, <String>{}));
-    _getCurrentLocation(); // Fetch dynamic location on init
+    _getCurrentLocation();
+    _loadCurrentUserId(); // Load user ID from secure storage
   }
 
-  // Use the 'location' package to get dynamic location with high accuracy
+  Future<void> _loadCurrentUserId() async {
+    currentUserId =
+        await _storage.read(key: 'currentUserId') ?? widget.currentUserId;
+    print("CheckpointScreen: Retrieved currentUserId: $currentUserId");
+  }
+
   Future<void> _getCurrentLocation() async {
     Location location = Location();
     bool serviceEnabled;
     PermissionStatus permissionGranted;
     LocationData? locationData;
 
-    // Check if location service is enabled
     serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
       serviceEnabled = await location.requestService();
       if (!serviceEnabled) {
-        return; // If service not enabled, return early
+        return;
       }
     }
 
-    // Check for location permission
     permissionGranted = await location.hasPermission();
     if (permissionGranted == PermissionStatus.denied) {
       permissionGranted = await location.requestPermission();
       if (permissionGranted != PermissionStatus.granted) {
-        return; // If permission denied, return early
+        return;
       }
     }
 
-    // Set location accuracy to high
     location.changeSettings(
       accuracy: LocationAccuracy.high,
     );
 
-    // Get location data
     locationData = await location.getLocation();
 
-    // Set the location data and fetch address
     if (mounted) {
-      // Ensure widget is still mounted
       setState(() {
         latitude = locationData?.latitude;
         longitude = locationData?.longitude;
@@ -172,9 +181,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
     }
   }
 
-  // Reverse geocode function to fetch human-readable address
   Future<String> reverseGeocode(double latitude, double longitude) async {
-    const apiKey = 'c5eb7405643243c68191cd30f7fcdf36'; // Your OpenCage API key
+    const apiKey = 'c5eb7405643243c68191cd30f7fcdf36';
     final url =
         'https://api.opencagedata.com/geocode/v1/json?q=$latitude+$longitude&key=$apiKey';
 
@@ -221,10 +229,10 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   }
 
   Future<void> _submitDataToBackend() async {
-    if (!mounted) return; // Ensure widget is still mounted
+    if (!mounted) return;
 
     setState(() {
-      _isSubmitting = true; // Show loading spinner
+      _isSubmitting = true;
     });
 
     final incompleteCategory = _getIncompleteCategory();
@@ -234,27 +242,21 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
         content: Text('Please complete the $incompleteCategory category.'),
       ));
 
-      // Scroll to the incomplete category
       _scrollToCategory(incompleteCategory);
       setState(() {
-        _isSubmitting = false; // Hide loading spinner
+        _isSubmitting = false;
       });
       return;
     }
 
     _submissionTime = DateTime.now();
-
-    // Calculate area scores
     final areaScores = _calculateAreaScores();
-
-    // Fetch zone score and facility score
     double? zoneScore;
     double? facilityScore;
 
     try {
-      // Properly encode the zone name and append office ID and user ID
       final zoneScoreUrl = Uri.encodeFull(
-        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score?office_id=${widget.officeId}&user_id=${widget.userId}',
+        'https://spaklean-app-prod.onrender.com/api/zones/${widget.zoneName}/score?office_id=${widget.officeId}&user_id=${widget.currentUserId}',
       );
       final zoneScoreResponse = await http.get(Uri.parse(zoneScoreUrl));
 
@@ -264,12 +266,12 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
             zoneScoreData['zone_score'] != "N/A") {
           zoneScore = double.tryParse(zoneScoreData['zone_score'].toString());
         } else {
-          zoneScore = null; // If no score, set to null
+          zoneScore = null;
         }
       }
 
       final facilityScoreUrl = Uri.encodeFull(
-        'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.userId}',
+        'https://spaklean-app-prod.onrender.com/api/facility/score?office_id=${widget.officeId}&user_id=${widget.currentUserId}',
       );
       final facilityScoreResponse = await http.get(Uri.parse(facilityScoreUrl));
 
@@ -284,13 +286,29 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       print("Error fetching zone or facility score: $e");
     }
 
-    // Prepare the data to be sent
+    final userId = int.tryParse(widget.currentUserId) ?? 0;
+    final roomId = int.tryParse(widget.roomId) ?? 0;
+
+    if (userId == 0 || roomId == 0) {
+      print("Invalid user_id or room_id");
+      setState(() {
+        _isSubmitting = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Invalid user or room ID'),
+      ));
+      return;
+    }
+
     final data = {
       "task_type": "Inspection",
       "latitude": latitude,
       "longitude": longitude,
-      "user_id": widget.userId,
-      "room_id": widget.roomId,
+      "user_id": currentUserId, // Use the current user ID from secure storage
+      "done_by_user_id": currentUserId, // ID of the current user (executor)
+      "done_on_behalf_of_user_id":
+          widget.doneOnBehalfUserId, // User being inspected for
+      "room_id": roomId.toString(),
       "zone_name": widget.zoneName,
       "area_scores": areaScores,
       "zone_score": zoneScore,
@@ -315,7 +333,6 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       print("Error submitting task: $e");
     } finally {
       if (mounted) {
-        // Ensure widget is still mounted
         setState(() {
           _isSubmitting = false;
         });
@@ -374,7 +391,8 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
             children: [
               buildCategory('CEILING', defectOptions['CEILING']!),
               buildCategory('WALLS', defectOptions['WALLS']!),
-              buildCategory('CTP', defectOptions['CTP']!),
+              buildCategory('Common Touch Points (CTP)',
+                  defectOptions['Common Touch Points (CTP)']!),
               buildCategory('WINDOWS', defectOptions['WINDOWS']!),
               buildCategory('EQUIPMENT', defectOptions['EQUIPMENT']!),
               buildCategory('FURNITURE', defectOptions['FURNITURE']!),

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import 'change_password_screen.dart';
 import 'office_screen.dart';
+import 'user_selection_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -55,15 +56,21 @@ class _LoginScreenState extends State<LoginScreen> {
         final role = responseData['role'];
         final userId = responseData['user_id'];
         final accessToken = responseData['access_token']; // Get access token
-        final passwordChangeRequired = responseData[
-            'password_change_required']; // Get password change flag
+        final passwordChangeRequired = responseData['password_change_required'];
 
         if (userId == null) {
           throw Exception("User ID is null");
         }
 
-        // Store access token securely
+        // Store access token and user ID securely
         await _storage.write(key: 'access_token', value: accessToken);
+        await _storage.write(
+            key: 'currentUserId',
+            value: userId.toString()); // Store the current user ID
+
+        // Debug: Print the stored user ID
+        print(
+            "Logged in with user ID: $userId"); // This will print in the console
 
         // If password change is required, navigate to Change Password screen
         if (passwordChangeRequired == true) {
@@ -77,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return; // Stop further navigation
         }
 
-        // Navigate based on role
+        // Check the role and navigate accordingly
         if (!mounted) return;
         if (role == 'Admin') {
           Navigator.pushReplacementNamed(context, '/admin');
@@ -85,13 +92,28 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => OfficeScreen(
-                  userId: userId.toString()), // Pass userId to OfficeScreen
+              builder: (context) => OfficeScreen(userId: userId.toString()),
             ),
           );
         } else if (role == 'CEO') {
-          // Navigate to CEO dashboard if role is CEO
           Navigator.pushReplacementNamed(context, '/ceo');
+        } else if (role == 'Custodial Manager' ||
+            role == 'Facility Executive') {
+          // Only these roles can perform tasks on behalf of others
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  UserSelectionScreen(role: role, userId: userId.toString()),
+            ),
+          );
+        } else {
+          // If the role is not permitted, show a message and do not navigate
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content:
+                    Text('You do not have permission to access this feature.')),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -164,9 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'email': email,
-        }),
+        body: jsonEncode({'email': email}),
       );
 
       if (response.statusCode == 200) {
@@ -204,15 +224,13 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // Add Image at the top of the screen
               Container(
                 alignment: Alignment.center,
-                padding:
-                    const EdgeInsets.only(bottom: 20.0), // Add some spacing
+                padding: const EdgeInsets.only(bottom: 20.0),
                 child: Image.asset(
-                  '/Users/benoniokaikoi/development/playground/spaklean_app/lib/assets/icon/SpakleanLogo.jpg', // Adjust the path based on your asset location
-                  height: 80.0, // Set desired height
-                  width: 80.0, // Set desired width
+                  '/Users/benoniokaikoi/development/playground/spaklean_app/lib/assets/icon/SpakleanLogo.jpg',
+                  height: 80.0,
+                  width: 80.0,
                 ),
               ),
               const Text(
@@ -268,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
               const SizedBox(height: 16),
               TextButton(
-                onPressed: _showForgotPasswordDialog, // Trigger forgot password
+                onPressed: _showForgotPasswordDialog,
                 child: const Text(
                   'Forgot Password?',
                   style: TextStyle(color: Colors.blueAccent),

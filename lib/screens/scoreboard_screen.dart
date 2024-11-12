@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'custodian_attendance_screen.dart'; // Import Custodian Attendance screen
 import 'facility_inspection_screen.dart';
+import 'notification_screen.dart'; // Import Notification screen
 
 class ScoreboardScreen extends StatelessWidget {
   final String userId; // Added userId parameter
@@ -83,7 +84,9 @@ class ScoreboardScreen extends StatelessWidget {
               'Notification',
               Icons.notifications,
               Colors.amber,
-              null, // Feature not implemented yet
+              NotificationScreen(
+                userId: userId, // Pass userId to NotificationScreen
+              ),
             ),
             _buildGridTile(
               context,

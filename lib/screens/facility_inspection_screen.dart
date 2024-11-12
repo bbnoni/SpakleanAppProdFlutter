@@ -165,6 +165,7 @@ class _FacilityInspectionScreenState extends State<FacilityInspectionScreen> {
               zone: zone,
               userId: widget.userId,
               officeId: widget.officeId,
+              currentUserId: widget.userId, // Pass currentUserId here
             ),
           ),
         );

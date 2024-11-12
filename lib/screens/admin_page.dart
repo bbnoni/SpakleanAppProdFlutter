@@ -39,7 +39,14 @@ class _AdminPageState extends State<AdminPage> {
   final _newPasswordController = TextEditingController();
 
   // Available Roles, Zones, and Sectors
-  final List<String> _roles = ['Custodian', 'Admin', 'Manager', 'CEO'];
+  final List<String> _roles = [
+    'Custodian',
+    'Admin',
+    'Manager',
+    'CEO',
+    'Facility Executive',
+    'Custodial Manager'
+  ];
   final List<String> _zones = [
     'Low Traffic Areas (Yellow Zone)',
     'Heavy Traffic Areas (Orange Zone)',
@@ -470,8 +477,10 @@ class _AdminPageState extends State<AdminPage> {
                         const SizedBox(height: 10),
                         TextField(
                           controller: _middleNameController,
-                          decoration:
-                              const InputDecoration(labelText: 'Middle Name'),
+                          decoration: const InputDecoration(
+                            labelText: 'Middle Name (Optional)',
+                            hintText: '(Optional)',
+                          ),
                         ),
                         const SizedBox(height: 10),
                         TextField(

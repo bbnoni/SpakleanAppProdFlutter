@@ -11,12 +11,14 @@ class ZoneDetailScreen extends StatefulWidget {
   final String zone;
   final String userId;
   final String officeId;
+  final String currentUserId; // Added this line
 
   const ZoneDetailScreen({
     super.key,
     required this.zone,
     required this.userId,
     required this.officeId,
+    required this.currentUserId, // Added this line
   });
 
   @override
@@ -34,7 +36,7 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
     super.initState();
     _fetchRooms();
     _fetchZoneScore();
-    _startAutoRefresh(); // Start auto-refresh
+    _startAutoRefresh();
   }
 
   void _startAutoRefresh() {
@@ -254,6 +256,9 @@ class _ZoneDetailScreenState extends State<ZoneDetailScreen> {
                                     userId: widget.userId,
                                     zoneName: widget.zone,
                                     officeId: widget.officeId,
+                                    currentUserId: widget
+                                        .currentUserId, // Pass currentUserId here
+                                    doneOnBehalfUserId: null,
                                   ),
                                 ),
                               );
