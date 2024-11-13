@@ -22,8 +22,8 @@ class _AdminPageState extends State<AdminPage> {
   final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _officeNameController =
-      TextEditingController(); // Controller for office name
+  //final _officeNameController =
+  //  TextEditingController(); // Controller for office name
 
   String? _selectedRole;
 
@@ -540,21 +540,39 @@ class _AdminPageState extends State<AdminPage> {
                     },
                     body: Column(
                       children: [
-                        DropdownButton<String>(
-                          value: _selectedUser,
-                          hint: const Text('Select User to Reset Password'),
-                          isExpanded: true,
-                          onChanged: (String? newValue) {
+                        // Updated dropdown search for user selection
+                        DropdownSearch<String>(
+                          items: _users
+                              .map((user) => user['username'].toString())
+                              .toList(),
+                          selectedItem: _selectedUser != null
+                              ? _users
+                                  .firstWhere((user) =>
+                                      user['id'].toString() ==
+                                      _selectedUser)['username']
+                                  .toString()
+                              : null,
+                          onChanged: (String? username) {
                             setState(() {
-                              _selectedUser = newValue;
+                              _selectedUser = _users
+                                  .firstWhere((user) =>
+                                      user['username'] == username)['id']
+                                  .toString();
                             });
                           },
-                          items: _users.map((user) {
-                            return DropdownMenuItem<String>(
-                              value: user['id'].toString(),
-                              child: Text(user['username']),
-                            );
-                          }).toList(),
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
+                            dropdownSearchDecoration: InputDecoration(
+                              labelText: "Select User to Reset Password",
+                              hintText: "Search and select a user",
+                            ),
+                          ),
+                          popupProps: PopupProps.menu(
+                            showSearchBox: true,
+                            searchFieldProps: TextFieldProps(
+                              decoration:
+                                  InputDecoration(labelText: "Search User"),
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 10),
                         TextField(
