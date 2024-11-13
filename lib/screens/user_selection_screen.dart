@@ -10,10 +10,10 @@ class UserSelectionScreen extends StatefulWidget {
   final String userId;
 
   const UserSelectionScreen({
-    Key? key,
+    super.key,
     required this.role,
     required this.userId,
-  }) : super(key: key);
+  });
 
   @override
   _UserSelectionScreenState createState() => _UserSelectionScreenState();

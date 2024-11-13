@@ -39,7 +39,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
   double? longitude;
   String? locationName;
   bool _isSubmitting = false;
-  final _storage = FlutterSecureStorage(); // Secure storage instance
+  final _storage = const FlutterSecureStorage(); // Secure storage instance
   String? currentUserId; // Store the current user ID from secure storage
 
   final Map<String, List<String>> defectOptions = {
@@ -294,7 +294,7 @@ class _CheckpointScreenState extends State<CheckpointScreen> {
       setState(() {
         _isSubmitting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Invalid user or room ID'),
       ));
       return;

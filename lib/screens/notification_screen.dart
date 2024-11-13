@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 class NotificationScreen extends StatefulWidget {
   final String userId;
 
-  const NotificationScreen({Key? key, required this.userId}) : super(key: key);
+  const NotificationScreen({super.key, required this.userId});
 
   @override
   _NotificationScreenState createState() => _NotificationScreenState();
@@ -15,7 +15,7 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   List<dynamic> _notifications = [];
   bool _isLoading = false;
-  Map<int, String> _userNamesCache = {}; // Cache for user names
+  final Map<int, String> _userNamesCache = {}; // Cache for user names
 
   @override
   void initState() {

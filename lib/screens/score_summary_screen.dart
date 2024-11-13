@@ -126,7 +126,7 @@ class _ScoreSummaryScreenState extends State<ScoreSummaryScreen> {
               ),
             ],
           );
-        }).toList(),
+        }),
       ],
     );
   }

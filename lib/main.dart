@@ -15,7 +15,7 @@ class SpakleanApp extends StatelessWidget {
 
   // Determine the start screen based on user role and login status
   Future<Widget> _determineStartScreen() async {
-    final storage = FlutterSecureStorage();
+    const storage = FlutterSecureStorage();
     final accessToken = await storage.read(key: 'access_token');
     final userId = await storage.read(key: 'currentUserId');
     final role = await storage.read(key: 'role');

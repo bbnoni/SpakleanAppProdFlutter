@@ -31,8 +31,8 @@ class _AdminPageState extends State<AdminPage> {
   final _officeController = TextEditingController();
   final _roomController = TextEditingController();
   final List<String> _addedRooms = [];
-  List<String> _selectedUsers = []; // Now support multiple selected users
-  List<String> _selectedUsersForOfficeAssignment = [];
+  final List<String> _selectedUsers = []; // Now support multiple selected users
+  final List<String> _selectedUsersForOfficeAssignment = [];
   String? _selectedUser; // Currently selected user
   String? _selectedZone; // Currently selected zone
   String? _selectedOffice; // Currently selected office for room assignment
@@ -566,7 +566,7 @@ class _AdminPageState extends State<AdminPage> {
                               hintText: "Search and select a user",
                             ),
                           ),
-                          popupProps: PopupProps.menu(
+                          popupProps: const PopupProps.menu(
                             showSearchBox: true,
                             searchFieldProps: TextFieldProps(
                               decoration:
@@ -646,13 +646,13 @@ class _AdminPageState extends State<AdminPage> {
                                 }));
                             });
                           },
-                          dropdownDecoratorProps: DropDownDecoratorProps(
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
                             dropdownSearchDecoration: InputDecoration(
                               labelText: "Select Users to Assign",
                               hintText: "Search and select users",
                             ),
                           ),
-                          popupProps: PopupPropsMultiSelection.menu(
+                          popupProps: const PopupPropsMultiSelection.menu(
                             showSearchBox: true,
                             searchFieldProps: TextFieldProps(
                               decoration:
@@ -741,7 +741,7 @@ class _AdminPageState extends State<AdminPage> {
                               hintText: "Search and select a user",
                             ),
                           ),
-                          popupProps: PopupProps.menu(
+                          popupProps: const PopupProps.menu(
                             showSearchBox: true,
                             searchFieldProps: TextFieldProps(
                               decoration:
@@ -777,7 +777,7 @@ class _AdminPageState extends State<AdminPage> {
                               hintText: "Search and select an office",
                             ),
                           ),
-                          popupProps: PopupProps.menu(
+                          popupProps: const PopupProps.menu(
                             showSearchBox: true,
                             searchFieldProps: TextFieldProps(
                               decoration:
@@ -906,13 +906,13 @@ class _AdminPageState extends State<AdminPage> {
                                 }));
                             });
                           },
-                          dropdownDecoratorProps: DropDownDecoratorProps(
+                          dropdownDecoratorProps: const DropDownDecoratorProps(
                             dropdownSearchDecoration: InputDecoration(
                               labelText: "Select Users to Assign",
                               hintText: "Search and select users",
                             ),
                           ),
-                          popupProps: PopupPropsMultiSelection.menu(
+                          popupProps: const PopupPropsMultiSelection.menu(
                             showSearchBox: true,
                             searchFieldProps: TextFieldProps(
                               decoration:
