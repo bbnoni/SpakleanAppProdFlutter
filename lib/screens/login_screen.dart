@@ -261,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.center,
                 padding: const EdgeInsets.only(bottom: 20.0),
                 child: Image.asset(
-                  '/Users/benoniokaikoi/development/playground/spaklean_app/lib/assets/icon/SpakleanLogo.jpg',
+                  '/Users/benoniokaikoi/development/playground/spaklean_app/lib/assets/icon/SpakleanLogo.jpeg',
                   height: 80.0,
                   width: 80.0,
                 ),
