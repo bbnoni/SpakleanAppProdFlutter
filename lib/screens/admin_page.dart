@@ -22,6 +22,9 @@ class _AdminPageState extends State<AdminPage> {
   final _lastNameController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _officeNameController =
+      TextEditingController(); // Controller for office name
+
   String? _selectedRole;
 
   // Controllers for Create Office and Room Section
@@ -40,7 +43,7 @@ class _AdminPageState extends State<AdminPage> {
 
   // Available Roles, Zones, and Sectors
   final List<String> _roles = [
-    'Custodian',
+    'Supervisor',
     'Admin',
     'Manager',
     'CEO',
@@ -574,7 +577,7 @@ class _AdminPageState extends State<AdminPage> {
                   ExpansionPanel(
                     headerBuilder: (context, isExpanded) {
                       return const ListTile(
-                        title: Text('Create Office'),
+                        title: Text('Create Building'),
                       );
                     },
                     body: Column(
@@ -582,7 +585,7 @@ class _AdminPageState extends State<AdminPage> {
                         TextField(
                           controller: _officeController,
                           decoration: const InputDecoration(
-                              labelText: 'Create New Office'),
+                              labelText: 'Create New Building'),
                         ),
                         // const SizedBox(height: 10),
                         // TextField(
@@ -680,7 +683,7 @@ class _AdminPageState extends State<AdminPage> {
                             : ElevatedButton(
                                 onPressed: _createOfficeAndRooms,
                                 child: const Text(
-                                    'Create Office and Assign to Users'),
+                                    'Create Building and Assign to Users'),
                               ),
                       ],
                     ),

@@ -21,6 +21,41 @@ class _LoginScreenState extends State<LoginScreen> {
   final _storage = const FlutterSecureStorage(); // Secure storage instance
   bool _isLoading = false; // To show loading indicator during login
 
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginStatus(); // Check if user is already logged in
+  }
+
+  // Check if the token exists on app startup
+  Future<void> _checkLoginStatus() async {
+    final accessToken = await _storage.read(key: 'access_token');
+    final userId = await _storage.read(key: 'currentUserId');
+    final role = await _storage.read(key: 'role'); // Read the stored role
+
+    if (accessToken != null && userId != null && role != null) {
+      // Route based on role
+      if (role == 'Custodial Manager' || role == 'Facility Executive') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => UserSelectionScreen(
+              role: role,
+              userId: userId,
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacementNamed(
+          context,
+          '/office',
+          arguments: {'userId': userId},
+        );
+      }
+    }
+  }
+
+  // Login function
   void _login() async {
     final email = _emailController.text
         .trim()
@@ -42,35 +77,25 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final response = await http.post(
         Uri.parse('https://spaklean-app-prod.onrender.com/api/auth/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'username': email,
-          'password': password,
-        }),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         final role = responseData['role'];
         final userId = responseData['user_id'];
-        final accessToken = responseData['access_token']; // Get access token
+        final accessToken = responseData['access_token'];
         final passwordChangeRequired = responseData['password_change_required'];
 
         if (userId == null) {
           throw Exception("User ID is null");
         }
 
-        // Store access token and user ID securely
+        // Store access token, user ID, and role securely
         await _storage.write(key: 'access_token', value: accessToken);
-        await _storage.write(
-            key: 'currentUserId',
-            value: userId.toString()); // Store the current user ID
-
-        // Debug: Print the stored user ID
-        print(
-            "Logged in with user ID: $userId"); // This will print in the console
+        await _storage.write(key: 'currentUserId', value: userId.toString());
+        await _storage.write(key: 'role', value: role); // Store the role
 
         // If password change is required, navigate to Change Password screen
         if (passwordChangeRequired == true) {
@@ -99,12 +124,13 @@ class _LoginScreenState extends State<LoginScreen> {
           Navigator.pushReplacementNamed(context, '/ceo');
         } else if (role == 'Custodial Manager' ||
             role == 'Facility Executive') {
-          // Only these roles can perform tasks on behalf of others
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  UserSelectionScreen(role: role, userId: userId.toString()),
+              builder: (context) => UserSelectionScreen(
+                role: role,
+                userId: userId.toString(),
+              ),
             ),
           );
         } else {
@@ -130,6 +156,14 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false; // Hide loading indicator
       });
     }
+  }
+
+  // Logout function
+  Future<void> _logout() async {
+    await _storage.delete(key: 'access_token'); // Clear the access token
+    await _storage.delete(key: 'currentUserId'); // Clear the user ID
+    await _storage.delete(key: 'role'); // Clear the role
+    Navigator.pushReplacementNamed(context, '/login'); // Go to login screen
   }
 
   // Show a dialog to collect the email address for forgot password
@@ -183,9 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await http.post(
         Uri.parse(
             'https://spaklean-app-prod.onrender.com/api/auth/forgot_password'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email}),
       );
 
