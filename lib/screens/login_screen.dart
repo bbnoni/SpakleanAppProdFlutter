@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:spaklean_app/screens/sign_up_screen.dart';
 
 import 'change_password_screen.dart';
 import 'office_screen.dart';
@@ -321,6 +322,19 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: _showForgotPasswordDialog,
                 child: const Text(
                   'Forgot Password?',
+                  style: TextStyle(color: Colors.blueAccent),
+                ),
+              ),
+              // Inside the build method of LoginScreen, below the "Forgot Password?" button:
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SignUpScreen()),
+                  );
+                },
+                child: const Text(
+                  'Don’t have an account? Sign Up',
                   style: TextStyle(color: Colors.blueAccent),
                 ),
               ),
