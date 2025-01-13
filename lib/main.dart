@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:spaklean_app/screens/customer_page.dart'; // Import Customer Page
 import 'package:spaklean_app/screens/office_screen.dart';
 
 import 'screens/admin_page.dart';
 import 'screens/ceo_dashboard_screen.dart';
 import 'screens/facility_inspection_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/user_selection_screen.dart'; // Import UserSelectionScreen
+import 'screens/user_selection_screen.dart';
 
 void main() => runApp(const SpakleanApp());
 
@@ -23,6 +24,8 @@ class SpakleanApp extends StatelessWidget {
     if (accessToken != null && userId != null && role != null) {
       if (role == 'Custodian') {
         return OfficeScreen(userId: userId);
+      } else if (role == 'Customer Manager') {
+        return CustomerPage(userId: userId); // Navigate to Customer Page
       } else if (role == 'Custodial Manager' || role == 'Facility Executive') {
         return UserSelectionScreen(role: role, userId: userId);
       } else if (role == 'Admin') {
@@ -64,6 +67,13 @@ class SpakleanApp extends StatelessWidget {
                   as Map<String, dynamic>?;
               final userId = args?['userId'];
               return OfficeScreen(userId: userId);
+            },
+            '/customer': (context) {
+              // Navigate to Customer Page
+              final args = ModalRoute.of(context)!.settings.arguments
+                  as Map<String, dynamic>?;
+              final userId = args?['userId'];
+              return CustomerPage(userId: userId);
             },
           },
           onGenerateRoute: (settings) {

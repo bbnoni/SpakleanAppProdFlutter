@@ -48,7 +48,8 @@ class _AdminPageState extends State<AdminPage> {
     'Manager',
     'CEO',
     'Facility Executive',
-    'Custodial Manager'
+    'Custodial Manager',
+    'Customer Manager'
   ];
   final List<String> _zones = [
     'Low Traffic Areas (Yellow Zone)',

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:spaklean_app/screens/locations_screen.dart';
 import 'package:spaklean_app/screens/sign_up_screen.dart';
 
 import 'change_password_screen.dart';
@@ -37,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (accessToken != null && userId != null && role != null) {
       // Route based on role
       if (role == 'Custodial Manager' || role == 'Facility Executive') {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -46,7 +48,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         );
+      } else if (role == 'Customer Manager') {
+        // Navigate to Customer Manager Page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LocationScreen(userId: int.parse(userId)),
+          ),
+        );
       } else {
+        // ignore: use_build_context_synchronously
         Navigator.pushReplacementNamed(
           context,
           '/office',
@@ -100,6 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // If password change is required, navigate to Change Password screen
         if (passwordChangeRequired == true) {
+          // ignore: use_build_context_synchronously
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -123,6 +135,13 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         } else if (role == 'CEO') {
           Navigator.pushReplacementNamed(context, '/ceo');
+        } else if (role == 'Customer Manager') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LocationScreen(userId: userId),
+            ),
+          );
         } else if (role == 'Custodial Manager' ||
             role == 'Facility Executive') {
           Navigator.pushReplacement(
@@ -164,6 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
     await _storage.delete(key: 'access_token'); // Clear the access token
     await _storage.delete(key: 'currentUserId'); // Clear the user ID
     await _storage.delete(key: 'role'); // Clear the role
+    // ignore: use_build_context_synchronously
     Navigator.pushReplacementNamed(context, '/login'); // Go to login screen
   }
 
